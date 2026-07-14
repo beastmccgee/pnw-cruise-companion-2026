@@ -32,13 +32,28 @@ function openCalendar(title, desc, address, isoDate, timeText) {
   const start = parseStopStart(isoDate, timeText);
   if (!start) { alert("This stop doesn't have a fixed time to add to your calendar."); return; }
   const end = new Date(start.getTime() + 60 * 60000);
-  const fmt = d => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const url = "https://www.google.com/calendar/render?action=TEMPLATE"
-    + "&text=" + encodeURIComponent(title)
-    + "&dates=" + fmt(start) + "/" + fmt(end)
-    + "&details=" + encodeURIComponent(desc || "")
-    + "&location=" + encodeURIComponent(address);
-  window.open(url, "_blank");
+  // Floating local time (no Z/TZID) so Apple Calendar treats it as whatever timezone
+  // the phone is actually in at the time — matches the trip-local intent of these stops.
+  const fmt = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const pad = n => String(n).padStart(2, "0");
+  const escapeICS = s => (s || "").replace(/([,;])/g, "\\$1").replace(/\n/g, "\\n");
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Honeymoon Companion//EN",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:" + Date.now() + "-" + Math.random().toString(36).slice(2) + "@honeymoon",
+    "DTSTAMP:" + fmt(new Date()) + "Z",
+    "DTSTART:" + fmt(start),
+    "DTEND:" + fmt(end),
+    "SUMMARY:" + escapeICS(title),
+    "DESCRIPTION:" + escapeICS(desc),
+    "LOCATION:" + escapeICS(address),
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+  window.location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
 }
 function parseStopStart(isoDate, timeText) {
   const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)/.exec(timeText || "");
