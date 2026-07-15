@@ -392,6 +392,40 @@ const DAY_ACCENTS = {
   6: "#5FBCF2", 7: "#7FD8D8", 8: "#84A7CD", 9: "#ABABE3", 10: "#8CB7E1", 11: "#769DDA"
 };
 
+// Confessional prompts — 2 per trip day. For day N: prompts (N-1)*2 and (N-1)*2+1.
+const CONFESSIONAL_PROMPTS = [
+ /*d1*/ "First impressions of married travel so far?", "What did they do today that nobody else would have noticed?",
+ /*d2*/ "Describe today's drive in three words each.", "Which fictional vampire would your partner survive longest against, and why?",
+ /*d3*/ "What smelled better: the rainforest, or them?", "Confess one thing you packed that you already regret.",
+ /*d4*/ "Rate the villa (the ship) out of ten — be honest, producers are listening.", "What are you most excited to do together at sea?",
+ /*d5*/ "A full day with nowhere to be: how did it feel?", "What's one thing about them you learned only by being trapped on a boat together?",
+ /*d6*/ "The whales: overrated or underrated? Defend yourselves.", "What moment today felt most like a movie?",
+ /*d7*/ "Train ride verdict: scenic masterpiece or nap with a view?", "What would your partner's Love Island intro line be?",
+ /*d8*/ "Describe the glacier without using the word 'blue'.", "Who kept whom warm today, really?",
+ /*d9*/ "Salmon count: how many did you actually see?", "What tiny thing today are you going to remember in ten years?",
+ /*d10*/ "A pub in Canada at 10 PM as a married couple: how do we feel?", "What's one thing from this trip you want to do again someday?",
+ /*d11*/ "Season 1 is wrapping: what was the episode of the trip?", "Write one sentence to the couple who lands in Cedar Rapids tonight."
+];
+
+// Couple achievement badges — awarded by hand from the Us tab.
+const BADGES = [
+ {id:"first-whale", emoji:"🐋", name:"First Whale"},
+ {id:"glacier-cuddle", emoji:"🧊", name:"Glacier Cuddle"},
+ {id:"twilight-pilgrims", emoji:"🌙", name:"Twilight Pilgrims"},
+ {id:"ferry-survivors", emoji:"⛴️", name:"Ferry Line Survivors"},
+ {id:"casa-amor-loyal", emoji:"🌿", name:"Casa Amor: Loyal"},
+ {id:"formal-stunners", emoji:"🥂", name:"Formal Night Stunners"},
+ {id:"sea-legs", emoji:"🌊", name:"Sea Legs"},
+ {id:"salmon-witness", emoji:"🐟", name:"Salmon Witnesses"},
+ {id:"summit-sippers", emoji:"🚂", name:"Summit Sippers"},
+ {id:"harbour-lights", emoji:"🌃", name:"Harbour Lights"},
+ {id:"chowder-champs", emoji:"🍲", name:"Chowder Champions"},
+ {id:"early-risers", emoji:"🌅", name:"Sunrise Beach Club"},
+ {id:"sanctuary-sloths", emoji:"🛋️", name:"Sanctuary Sloths"},
+ {id:"spreadsheet-respecter", emoji:"📋", name:"Followed The Itinerary (One Full Day)"},
+ {id:"recoupled", emoji:"💍", name:"Recoupled (Obviously)"}
+];
+
 // Episode titles — the reality-show layer ("Documentary Crew" mode)
 const EPISODE_TITLES = {
   1: "The Islanders Arrive",

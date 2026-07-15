@@ -413,9 +413,109 @@ body::after {
 /* Producer's-note subtitle under section headings (show mode) */
 .producer-note { font-size: 12px; color: var(--on-surface-variant); margin: -6px 20px 12px; font-style: italic; }
 
+/* ================= Phase 2 — Us tab (rituals & memory) ================= */
+
+.us-subtitle { font-size: 13px; color: var(--on-surface-variant); font-style: italic; margin-top: 4px; }
+
+/* ---------- Heart burst ---------- */
+.heart {
+  position: fixed; z-index: 1400; pointer-events: none; font-size: 20px;
+  transform: translate(-50%, -50%); will-change: transform, opacity;
+  animation: heartFly 900ms ease-out forwards;
+}
+@keyframes heartFly {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)) scale(1.1); }
+}
+
+/* ---------- 💌 Love notes ---------- */
+.note-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 11px 12px; border-radius: 12px; border: 1px solid var(--outline);
+  margin-bottom: 8px; cursor: pointer; background: var(--surface-variant);
+}
+.note-row.locked { cursor: default; opacity: .72; background: none; }
+.note-row.today { box-shadow: 0 0 0 1px var(--rose), 0 0 18px rgba(232,121,143,.4); }
+.note-day { font-size: 13px; font-weight: 700; color: var(--primary); flex-shrink: 0; }
+.note-status { font-size: 13px; color: var(--on-surface-variant); text-align: right; }
+.note-status.locked { font-style: italic; }
+
+.note-modal {
+  position: fixed; inset: 0; z-index: 1300; display: flex; align-items: center; justify-content: center;
+  background: rgba(10,4,8,.74); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 24px;
+}
+.note-card {
+  background: var(--surface-solid); border: 1px solid var(--outline); border-radius: 22px;
+  padding: 24px 22px 20px; max-width: 420px; width: 100%; text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,.6);
+}
+.note-flap { font-size: 46px; display: inline-block; transform-origin: center bottom; animation: flapOpen .7s ease-out both; }
+@keyframes flapOpen { from { transform: rotateX(-82deg); opacity: .2; } to { transform: rotateX(0); opacity: 1; } }
+.note-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .1em; color: var(--secondary); margin-top: 10px; text-transform: uppercase; }
+.note-body { font-size: 20px; line-height: 1.5; color: var(--on-surface); margin: 14px 4px 18px; animation: tcFade .6s ease-out both .2s; }
+.note-close { border: 1px solid var(--outline); background: none; color: var(--primary); border-radius: 20px; padding: 8px 20px; font-weight: 600; cursor: pointer; }
+
+/* ---------- 🌹 Rose ceremony ---------- */
+.rose-tonight { font-size: 13px; color: var(--secondary); font-weight: 600; margin: 2px 0 8px; }
+.rose-half { padding: 10px 0; border-top: 1px solid var(--outline); }
+.rose-half:first-of-type { border-top: none; }
+.rose-half-label { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.rose-row { display: flex; gap: 4px; margin-bottom: 8px; }
+.rose-btn { border: none; background: none; font-size: 22px; cursor: pointer; filter: grayscale(1) opacity(.4); padding: 2px; line-height: 1; transition: filter .15s ease, transform .15s ease; }
+.rose-btn.on { filter: none; }
+.rose-btn:active { transform: scale(1.25); }
+.rose-line { width: 100%; border: 1px solid var(--outline); border-radius: 10px; padding: 8px 10px; font-size: 14px; background: var(--bg); color: var(--on-surface); margin-bottom: 8px; }
+.rose-save { border: none; background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 13px; padding: 8px 18px; border-radius: 20px; cursor: pointer; }
+.past-ceremonies, .confess-archive { margin-top: 12px; }
+.past-ceremonies summary, .confess-archive summary { font-size: 14px; font-weight: 600; color: var(--secondary); cursor: pointer; }
+.past-row { padding: 8px 0; border-top: 1px solid var(--outline); margin-top: 8px; }
+.past-date { font-size: 12px; font-weight: 700; color: var(--primary); }
+.confess-q { font-size: 13px; font-style: italic; color: var(--on-surface); margin: 2px 0; }
+
+/* ---------- 🎤 Confessional ---------- */
+.confess-chip { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--secondary); background: var(--surface-variant); padding: 3px 10px; border-radius: 20px; margin: 8px 0 4px; }
+.confess-prompt { font-size: 15px; font-weight: 600; color: var(--on-surface); margin: 12px 0 6px; }
+.confess-input, .scrap-caption {
+  width: 100%; border: 1px solid var(--outline); border-radius: 10px; padding: 8px 10px;
+  font-size: 14px; background: var(--bg); color: var(--on-surface); margin-bottom: 6px;
+  font-family: inherit; resize: vertical;
+}
+
+/* ---------- 📸 Scrapbook ---------- */
+.scrap-chips { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px; -webkit-overflow-scrolling: touch; }
+.scrap-chip { flex-shrink: 0; border: 1px solid var(--outline); background: var(--surface-variant); color: var(--on-surface-variant); font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; cursor: pointer; }
+.scrap-chip.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.scrap-daylabel { font-size: 13px; font-weight: 600; color: var(--secondary); margin: 8px 0; }
+.scrap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+.scrap-thumb { padding-top: 100%; background-size: cover; background-position: center; border-radius: 12px; cursor: pointer; }
+.scrap-add { border: 1px dashed var(--outline); background: none; color: var(--primary); font-weight: 600; font-size: 14px; padding: 10px; border-radius: 12px; cursor: pointer; width: 100%; margin-top: 4px; }
+.scrap-add.day-memory { margin-top: 16px; }
+
+.lightbox { position: fixed; inset: 0; z-index: 1300; background: rgba(6,3,5,.92); display: flex; align-items: center; justify-content: center; }
+.lightbox .lb-img { width: 92vw; max-width: 560px; height: 74vh; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.lightbox .lb-meta { position: absolute; top: calc(env(safe-area-inset-top,0px) + 16px); left: 0; right: 0; text-align: center; color: #fff; font-size: 13px; font-weight: 600; opacity: .85; }
+.lightbox .lb-close { position: absolute; top: calc(env(safe-area-inset-top,0px) + 12px); right: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.16); color: #fff; border: none; font-size: 16px; cursor: pointer; }
+.lightbox .lb-del { position: absolute; bottom: calc(env(safe-area-inset-bottom,0px) + 22px); left: 50%; transform: translateX(-50%); background: rgba(178,58,85,.9); color: #fff; border: none; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 22px; cursor: pointer; }
+
+/* ---------- 🏆 Badges ---------- */
+.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+.badge-cell { border: none; background: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px 2px; }
+.badge-emoji {
+  width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 26px; background: var(--surface-variant); border: 1px solid var(--outline);
+  filter: grayscale(1); opacity: .4; transition: filter .2s ease, opacity .2s ease, box-shadow .2s ease;
+}
+.badge-cell.earned .badge-emoji { filter: none; opacity: 1; box-shadow: 0 0 16px rgba(230,192,138,.4); border-color: var(--secondary); }
+.badge-name { font-size: 10px; line-height: 1.2; text-align: center; color: var(--on-surface-variant); }
+.badge-cell.earned .badge-name { color: var(--on-surface); }
+
 @media (prefers-reduced-motion: reduce) {
   .title-card::before { animation: none; }
   .title-card .tc-inner { animation-duration: .01s; }
   .day-card { transition: none; }
   html { scroll-behavior: auto; }
+  .heart { display: none; }
+  .note-flap, .note-body { animation: none; }
+  .rose-btn { transition: none; }
 }

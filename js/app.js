@@ -37,6 +37,37 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
+// ---------- Heart burst ❤ (shared celebratory flourish) ----------
+const _reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function heartBurst(x, y) {
+  if (_reduceMotion()) return;
+  const glyphs = ["❤", "💗", "💞"];
+  for (let i = 0; i < 14; i++) {
+    const h = el("span", { class: "heart" }, glyphs[Math.floor(Math.random() * glyphs.length)]);
+    const dx = (Math.random() * 180 - 90).toFixed(0);
+    const dy = (Math.random() * -100 - 40).toFixed(0);
+    const rot = (Math.random() * 120 - 60).toFixed(0);
+    h.style.cssText =
+      `left:${x}px; top:${y}px; --dx:${dx}px; --dy:${dy}px; --rot:${rot}deg;` +
+      `animation-delay:${(Math.random() * 90).toFixed(0)}ms;`;
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), 1050);
+  }
+}
+// Fire a burst centered on an element (or an event's location).
+function heartBurstAt(target) {
+  const r = (target.getBoundingClientRect ? target : target.currentTarget).getBoundingClientRect();
+  heartBurst(r.left + r.width / 2, r.top + r.height / 2);
+}
+// Attach a double-tap/double-click handler (two taps < 300ms) to an element.
+function onDoubleTap(node, handler) {
+  let last = 0;
+  node.addEventListener("click", e => {
+    const now = e.timeStamp || Date.now();
+    if (now - last < 300) { handler(e); last = 0; } else { last = now; }
+  });
+}
+
 // NOTE: document.startViewTransition ghost-doubles against the fixed SVG
 // backdrop + mix-blend grain layer (seen on desktop Chromium, user-reported).
 // Navigation is instant on purpose; episode title cards are the cinematic moment.
@@ -46,7 +77,8 @@ const TAB_LABELS = {
   days:      { normal: "Days",     show: "Episodes" },
   prep:      { normal: "Prep",     show: "Pre-Prod" },
   trip:      { normal: "Trip",     show: "Trip" },
-  confirms:  { normal: "Confirms", show: "Binder" }
+  confirms:  { normal: "Confirms", show: "Binder" },
+  us:        { normal: "Us",       show: "Confessional" }
 };
 
 function applyShowMode() {
@@ -65,6 +97,8 @@ function applyShowMode() {
     note = el("div", { class: "producer-note" }, "produced with loving, forensic precision by Tanner");
     prepHero.after(note);
   } else if (!on && note) note.remove();
+  const usSub = document.getElementById("us-subtitle");
+  if (usSub) usSub.style.display = on ? "" : "none";
   renderDaysList();
 }
 
@@ -287,7 +321,18 @@ function buildDayDetail(day) {
     timeline.appendChild(renderTimelineRow(stop, i + 1, i === day.schedule.length - 1, day));
   });
   body.appendChild(timeline);
+
+  // Jump straight to this day's scrapbook from the day page
+  body.appendChild(el("button", {
+    class: "scrap-add day-memory", onclick: () => {
+      _scrapDay = day.id;
+      withTransition(() => { showView("us"); renderUs(); });
+    }
+  }, "＋ add a memory"));
   root.appendChild(body);
+
+  // Double-tap the hero to send up a little burst of hearts
+  onDoubleTap(hero, () => heartBurstAt(hero));
 
   showView("day-detail");
   setTimeout(() => renderDayMap(mapDiv.id, day), 0);
@@ -566,12 +611,326 @@ function renderConfirms() {
   }, "❤ Here's to the first of many trips, Mr. & Mrs. Purdum ❤"));
 }
 
+// ============================================================
+//  Us tab — Rituals & Memory (all device-local, IndexedDB)
+// ============================================================
+const TRIP_START = "2026-08-05";
+const TRIP_END   = "2026-08-15";
+
+function tripDayForDate(iso) { return TripData.days.find(d => d.calendarDate === iso) || null; }
+function augDayNum(iso) { return parseInt(iso.slice(8, 10), 10); }
+// Decode base64 that holds UTF-8 bytes (atob alone mangles the em-dashes).
+function b64ToUtf8(b64) {
+  return new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+}
+
+async function renderUs() {
+  const c = document.getElementById("us-content");
+  c.innerHTML = "";
+  const today = localISODate();
+  // Build the five cards in order; each fills itself (async IDB reads inside).
+  const loveCard    = el("div", { class: "info-card" });
+  const roseCard    = el("div", { class: "info-card" });
+  const confessCard = el("div", { class: "info-card" });
+  const scrapCard   = el("div", { class: "info-card" });
+  const badgeCard   = el("div", { class: "info-card" });
+  c.append(loveCard, roseCard, confessCard, scrapCard, badgeCard);
+  renderLoveNotesCard(loveCard, today);
+  renderRoseCard(roseCard, today);
+  renderConfessionalCard(confessCard, today);
+  renderScrapbookCard(scrapCard, today);
+  renderBadgesCard(badgeCard, today);
+}
+
+// ---------- 💌 Love notes ----------
+function renderLoveNotesCard(card, today) {
+  card.innerHTML = "";
+  card.appendChild(pill("💌 A text has arrived"));
+  const list = el("div", { style: "margin-top:10px;" });
+  TripData.days.forEach(day => {
+    const locked = today < day.calendarDate;
+    const isToday = today === day.calendarDate;
+    const row = el("div", {
+      class: "note-row" + (locked ? " locked" : "") + (isToday ? " today" : ""),
+      onclick: locked ? null : () => openNoteModal(day)
+    }, [
+      el("span", { class: "note-day" }, `Day ${day.id}`),
+      locked
+        ? el("span", { class: "note-status locked" }, `🔒 Unlocks Aug ${augDayNum(day.calendarDate)} — no peeking, islander.`)
+        : el("span", { class: "note-status" }, (isToday ? "💗 Today's note — tap to open" : "💌 Tap to reopen"))
+    ]);
+    list.appendChild(row);
+  });
+  card.appendChild(list);
+}
+
+function openNoteModal(day) {
+  let text = "(this note is shy)";
+  try { text = b64ToUtf8(LOVE_NOTES[day.id]); } catch (e) { /* fallback stands */ }
+  const overlay = el("div", { class: "note-modal" }, [
+    el("div", { class: "note-card", onclick: e => e.stopPropagation() }, [
+      el("div", { class: "note-flap" }, "💌"),
+      el("div", { class: "note-eyebrow" }, `Day ${day.id} · Aug ${augDayNum(day.calendarDate)}`),
+      el("div", { class: "note-body heading-font" }, text),
+      el("button", { class: "note-close", onclick: () => overlay.remove() }, "close")
+    ])
+  ]);
+  overlay.addEventListener("click", () => overlay.remove());
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => heartBurst(window.innerWidth / 2, window.innerHeight / 2));
+}
+
+// ---------- 🌹 Rose Ceremony ----------
+async function renderRoseCard(card, today) {
+  card.innerHTML = "";
+  card.appendChild(pill("🌹 The Rose Ceremony"));
+  if (today < TRIP_START) {
+    card.appendChild(muted("The first ceremony airs the night of Aug 5."));
+    return;
+  }
+  card.appendChild(el("div", { class: "rose-tonight" }, "— tonight"));
+  const rec = (await Store.get("roses", today)) || { date: today, tRoses: 0, tLine: "", cRoses: 0, cLine: "" };
+
+  card.appendChild(roseHalf("Tanner → Chloe", rec, "t", today));
+  card.appendChild(roseHalf("Chloe → Tanner", rec, "c", today));
+
+  const all = (await Store.all("roses")).filter(r => r.date !== today && (r.tRoses || r.cRoses || r.tLine || r.cLine));
+  if (all.length) {
+    all.sort((a, b) => b.date.localeCompare(a.date));
+    const det = el("details", { class: "past-ceremonies" }, [ el("summary", {}, "Past ceremonies") ]);
+    all.forEach(r => {
+      det.appendChild(el("div", { class: "past-row" }, [
+        el("div", { class: "past-date" }, `Aug ${augDayNum(r.date)}`),
+        r.tRoses || r.tLine ? muted(`🌹×${r.tRoses} T→C${r.tLine ? " · “" + r.tLine + "”" : ""}`) : null,
+        r.cRoses || r.cLine ? muted(`🌹×${r.cRoses} C→T${r.cLine ? " · “" + r.cLine + "”" : ""}`) : null
+      ]));
+    });
+    card.appendChild(det);
+  }
+}
+
+function roseHalf(label, rec, who, today) {
+  const rosesKey = who + "Roses", lineKey = who + "Line";
+  const state = { n: rec[rosesKey] || 0 };
+  const buttons = [];
+  const roseRow = el("div", { class: "rose-row" });
+  for (let i = 1; i <= 5; i++) {
+    const b = el("button", {
+      class: "rose-btn" + (i <= state.n ? " on" : ""),
+      onclick: () => {
+        state.n = (state.n === i) ? i - 1 : i; // tapping the current count clears back one
+        buttons.forEach((btn, idx) => btn.classList.toggle("on", idx < state.n));
+      }
+    }, "🌹");
+    buttons.push(b);
+    roseRow.appendChild(b);
+  }
+  const input = el("input", {
+    class: "rose-line", type: "text", maxlength: "120",
+    placeholder: "one sentence, from the heart", value: rec[lineKey] || ""
+  });
+  const saveBtn = el("button", { class: "rose-save" }, "Save");
+  saveBtn.addEventListener("click", async () => {
+    const fresh = (await Store.get("roses", today)) || { date: today, tRoses: 0, tLine: "", cRoses: 0, cLine: "" };
+    fresh[rosesKey] = state.n;
+    fresh[lineKey] = input.value.trim();
+    await Store.put("roses", fresh);
+    heartBurstAt(saveBtn);
+    toast("Roses given. The islanders remain coupled.");
+  });
+  return el("div", { class: "rose-half" }, [
+    el("div", { class: "rose-half-label" }, label),
+    roseRow, input, saveBtn
+  ]);
+}
+
+// ---------- 🎤 The Confessional ----------
+async function renderConfessionalCard(card, today) {
+  card.innerHTML = "";
+  const tripDay = tripDayForDate(today);
+  let dayN, preview = false;
+  if (tripDay) dayN = tripDay.id;
+  else if (today < TRIP_START) { dayN = 1; preview = true; }
+  else dayN = 11;
+  const dayObj = TripData.days.find(d => d.id === dayN);
+  const recDate = dayObj.calendarDate;
+
+  card.appendChild(pill(`🎤 The Confessional — Day ${dayN}${preview ? " (sneak peek)" : ""}`));
+  const firstT = dayN % 2 === 1; // odd day: Tanner first
+  card.appendChild(el("div", { class: "confess-chip" }, `${firstT ? "T" : "C"} answers first tonight`));
+
+  const rec = (await Store.get("confessional", recDate)) || { date: recDate, answers: {} };
+  const idxs = [(dayN - 1) * 2, (dayN - 1) * 2 + 1];
+  idxs.forEach(idx => {
+    rec.answers[idx] = rec.answers[idx] || { t: "", c: "" };
+    card.appendChild(el("div", { class: "confess-prompt" }, CONFESSIONAL_PROMPTS[idx]));
+    ["t", "c"].forEach(who => {
+      const ta = el("textarea", {
+        class: "confess-input", rows: "2",
+        placeholder: who === "t" ? "Tanner…" : "Chloe…"
+      });
+      ta.value = rec.answers[idx][who];
+      ta.addEventListener("blur", async () => {
+        rec.answers[idx][who] = ta.value;
+        await Store.put("confessional", rec);
+        toast("Confessional saved 🎬");
+      });
+      card.appendChild(ta);
+    });
+  });
+
+  const all = (await Store.all("confessional")).filter(r => r.date !== recDate);
+  if (all.length) {
+    all.sort((a, b) => b.date.localeCompare(a.date));
+    const det = el("details", { class: "confess-archive" }, [ el("summary", {}, "Earlier confessionals") ]);
+    all.forEach(r => {
+      const dObj = tripDayForDate(r.date);
+      const dN = dObj ? dObj.id : augDayNum(r.date);
+      Object.entries(r.answers).forEach(([idx, ans]) => {
+        if (!ans.t && !ans.c) return;
+        det.appendChild(el("div", { class: "past-row" }, [
+          el("div", { class: "past-date" }, `Day ${dN}`),
+          el("div", { class: "confess-q" }, CONFESSIONAL_PROMPTS[idx] || ""),
+          ans.t ? muted("T: " + ans.t) : null,
+          ans.c ? muted("C: " + ans.c) : null
+        ]));
+      });
+    });
+    card.appendChild(det);
+  }
+}
+
+// ---------- 📸 Scrapbook ----------
+let _scrapDay = null;        // selected day id
+let _scrapUrls = [];         // object URLs to revoke on re-render
+function revokeScrapUrls() { _scrapUrls.forEach(u => URL.revokeObjectURL(u)); _scrapUrls = []; }
+function nearestDayId(today) {
+  const t = new Date(today + "T00:00:00").getTime();
+  let best = TripData.days[0].id, bestDiff = Infinity;
+  TripData.days.forEach(d => {
+    const diff = Math.abs(new Date(d.calendarDate + "T00:00:00").getTime() - t);
+    if (diff < bestDiff) { bestDiff = diff; best = d.id; }
+  });
+  return best;
+}
+
+async function renderScrapbookCard(card, today) {
+  card.innerHTML = "";
+  revokeScrapUrls();
+  if (_scrapDay == null) _scrapDay = nearestDayId(today);
+  card.appendChild(pill("📸 Scrapbook"));
+
+  const chips = el("div", { class: "scrap-chips" });
+  TripData.days.forEach(d => {
+    chips.appendChild(el("button", {
+      class: "scrap-chip" + (d.id === _scrapDay ? " on" : ""),
+      onclick: () => { _scrapDay = d.id; renderScrapbookCard(card, today); }
+    }, `EP${d.id}`));
+  });
+  card.appendChild(chips);
+
+  const day = TripData.days.find(d => d.id === _scrapDay);
+  card.appendChild(el("div", { class: "scrap-daylabel" }, day.date + " · " + day.title));
+
+  // Caption (journal store, autosave on blur)
+  const journal = (await Store.get("journal", day.calendarDate)) || { date: day.calendarDate, text: "" };
+  const caption = el("textarea", { class: "scrap-caption", rows: "2", placeholder: "a line about this day…" });
+  caption.value = journal.text;
+  caption.addEventListener("blur", async () => {
+    journal.text = caption.value;
+    await Store.put("journal", journal);
+    toast("Saved 📝");
+  });
+  card.appendChild(caption);
+
+  // Photo grid
+  const grid = el("div", { class: "scrap-grid" });
+  const photos = (await Store.all("photos")).filter(p => p.date === day.calendarDate).sort((a, b) => a.ts - b.ts);
+  photos.forEach(p => {
+    const url = URL.createObjectURL(p.blob);
+    _scrapUrls.push(url);
+    grid.appendChild(el("div", {
+      class: "scrap-thumb", style: `background-image:url('${url}')`,
+      onclick: () => openLightbox(p, () => renderScrapbookCard(card, today))
+    }));
+  });
+  card.appendChild(grid);
+
+  // Add photos
+  const fileInput = el("input", { type: "file", accept: "image/*", multiple: "", hidden: "" });
+  fileInput.addEventListener("change", async () => {
+    for (const file of fileInput.files) {
+      try {
+        const blob = await compressImage(file);
+        const id = `${day.calendarDate}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        await Store.put("photos", { id, date: day.calendarDate, blob, ts: Date.now() });
+      } catch (e) { /* skip an image that won't decode */ }
+    }
+    renderScrapbookCard(card, today);
+  });
+  const addBtn = el("button", { class: "scrap-add", onclick: () => fileInput.click() }, "＋ Add photos");
+  card.append(addBtn, fileInput);
+}
+
+function openLightbox(photo, onDelete) {
+  const url = URL.createObjectURL(photo.blob);
+  const img = el("div", { class: "lb-img", style: `background-image:url('${url}')` });
+  const overlay = el("div", { class: "lightbox" }, [
+    img,
+    el("div", { class: "lb-meta" }, `Aug ${augDayNum(photo.date)}`),
+    el("button", { class: "lb-del", onclick: async e => {
+      e.stopPropagation();
+      if (confirm("Delete this photo?")) {
+        await Store.del("photos", photo.id);
+        close(); onDelete && onDelete();
+      }
+    } }, "🗑 Delete"),
+    el("button", { class: "lb-close", onclick: e => { e.stopPropagation(); close(); } }, "✕")
+  ]);
+  function close() { URL.revokeObjectURL(url); overlay.remove(); }
+  overlay.addEventListener("click", close);
+  onDoubleTap(img, e => { e.stopPropagation(); heartBurstAt(img); });
+  document.body.appendChild(overlay);
+}
+
+// ---------- 🏆 Badges ----------
+async function renderBadgesCard(card, today) {
+  card.innerHTML = "";
+  card.appendChild(pill("🏆 Couple Achievements"));
+  const earned = {};
+  (await Store.all("badges")).forEach(b => { earned[b.id] = b.earnedDate; });
+  const grid = el("div", { class: "badge-grid" });
+  BADGES.forEach(def => {
+    const isEarned = !!earned[def.id];
+    const cell = el("button", { class: "badge-cell" + (isEarned ? " earned" : "") }, [
+      el("div", { class: "badge-emoji" }, def.emoji),
+      el("div", { class: "badge-name" }, def.name)
+    ]);
+    cell.addEventListener("click", async e => {
+      if (isEarned) {
+        if (confirm(`“${def.name}” — earned Aug ${augDayNum(earned[def.id])}. Un-award?`)) {
+          await Store.del("badges", def.id);
+          renderBadgesCard(card, today);
+        }
+      } else {
+        if (confirm(`Award “${def.name}”?`)) {
+          await Store.put("badges", { id: def.id, earnedDate: today });
+          heartBurstAt(cell);
+          renderBadgesCard(card, today);
+        }
+      }
+    });
+    grid.appendChild(cell);
+  });
+  card.appendChild(grid);
+}
+
 // ---------- Tab navigation ----------
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   document.getElementById("view-" + name).classList.add("active");
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  const map = { days: "days", "day-detail": "days", prep: "prep", trip: "trip", confirms: "confirms" };
+  const map = { days: "days", "day-detail": "days", prep: "prep", trip: "trip", confirms: "confirms", us: "us" };
   const tabName = map[name];
   const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
   if (btn) btn.classList.add("active");
@@ -586,6 +945,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
       if (tab === "prep") renderPrep();
       if (tab === "trip") renderTrip();
       if (tab === "confirms") renderConfirms();
+      if (tab === "us") renderUs();
     });
   });
 });

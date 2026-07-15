@@ -1,6 +1,6 @@
 // Bump CACHE_NAME on ANY app change — fetches are cache-first, so installed copies
 // only pick up updates when a new SW version installs and re-caches everything.
-const CACHE_NAME = "honeymoon-pwa-v5";
+const CACHE_NAME = "honeymoon-pwa-v6";
 const TILE_CACHE = "honeymoon-tiles-v1";
 
 const CORE_ASSETS = [
@@ -9,6 +9,8 @@ const CORE_ASSETS = [
   "manifest.json",
   "css/styles.css",
   "js/data.js",
+  "js/store.js",
+  "js/lovenotes.js",
   "js/checklist.js",
   "js/app.js",
   "vendor/leaflet/leaflet.js",

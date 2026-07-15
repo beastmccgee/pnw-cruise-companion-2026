@@ -1,0 +1,3 @@
+# Tanner's real love notes — private, never committed. Run generate_notes.mjs
+# after editing to rebuild js/lovenotes.js (which IS committed, base64-encoded).
+notes.private.txt
