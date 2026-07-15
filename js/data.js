@@ -392,6 +392,19 @@ const DAY_ACCENTS = {
   6: "#5FBCF2", 7: "#7FD8D8", 8: "#84A7CD", 9: "#ABABE3", 10: "#8CB7E1", 11: "#769DDA"
 };
 
+// Live-weather points (open-meteo, keyless) and per-day mapping. Day 5 is at
+// sea with no fixed coordinate, so it maps to null (no chip that day).
+const WEATHER_POINTS = {
+  seattle:   { lat: 47.61, lng: -122.33, label: "Seattle" },
+  forks:     { lat: 47.95, lng: -124.39, label: "Forks" },
+  juneau:    { lat: 58.30, lng: -134.42, label: "Juneau" },
+  skagway:   { lat: 59.46, lng: -135.31, label: "Skagway" },
+  glacier:   { lat: 58.67, lng: -136.90, label: "Glacier Bay" },
+  ketchikan: { lat: 55.34, lng: -131.65, label: "Ketchikan" },
+  victoria:  { lat: 48.43, lng: -123.37, label: "Victoria" }
+};
+const DAY_WEATHER = { 1:"seattle", 2:"forks", 3:"forks", 4:"seattle", 5:null, 6:"juneau", 7:"skagway", 8:"glacier", 9:"ketchikan", 10:"victoria", 11:"seattle" };
+
 // Confessional prompts — 2 per trip day. For day N: prompts (N-1)*2 and (N-1)*2+1.
 const CONFESSIONAL_PROMPTS = [
  /*d1*/ "First impressions of married travel so far?", "What did they do today that nobody else would have noticed?",

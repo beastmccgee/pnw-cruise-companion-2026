@@ -297,6 +297,11 @@ function buildDayDetail(day) {
   root.classList.toggle("twilight", !!day.twilightTheme);
   root.style.setProperty("--day-accent", DAY_ACCENTS[day.id]);
   const show = ShowMode.on;
+  _shiftAnchor = null; // fresh page, drop any running-late shift
+
+  // Live-weather chip for this day's point, if we have cached data
+  const wxKey = DAY_WEATHER[day.id];
+  const wx = wxKey ? wxFor(wxKey, day.calendarDate) : null;
 
   const hero = el("div", {
     class: "day-detail-hero",
@@ -306,7 +311,8 @@ function buildDayDetail(day) {
     el("div", { class: "hero-text" }, [
       day.twilightTheme ? el("div", { class: "twilight-chip" }, "🌙 TWILIGHT SAGA DETOUR") : null,
       el("div", { class: "date-label" }, (show ? `EPISODE ${day.id} · ` : "") + day.date.toUpperCase()),
-      el("div", { class: "title-label heading-font" }, show ? `“${EPISODE_TITLES[day.id]}”` : day.title)
+      el("div", { class: "title-label heading-font" }, show ? `“${EPISODE_TITLES[day.id]}”` : day.title),
+      wx ? el("div", { class: "wx-chip" }, `${wx.high}° / ${wx.low}° · ${wxCodeEmoji(wx.code)}${wx.precip != null ? wx.precip + "%" : ""}`) : null
     ])
   ]);
   root.appendChild(hero);
@@ -316,11 +322,10 @@ function buildDayDetail(day) {
   const mapDiv = el("div", { class: "day-map", id: "day-map-" + day.id });
   body.appendChild(mapDiv);
 
-  const timeline = el("div", { class: "timeline" });
-  day.schedule.forEach((stop, i) => {
-    timeline.appendChild(renderTimelineRow(stop, i + 1, i === day.schedule.length - 1, day));
-  });
-  body.appendChild(timeline);
+  const timelineWrap = el("div", { class: "timeline-wrap" });
+  const isToday = day.calendarDate === localISODate();
+  renderTimelineInto(timelineWrap, day, isToday);
+  body.appendChild(timelineWrap);
 
   // Jump straight to this day's scrapbook from the day page
   body.appendChild(el("button", {
@@ -345,6 +350,11 @@ function renderDayMap(elementId, day) {
   // OSM's tile policy requires visible attribution
   L.control.attribution({ prefix: false }).addAttribution("© OpenStreetMap").addTo(map);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, subdomains: TILE_SUBDOMAINS }).addTo(map);
+  // Dashed route line through the day's stops (only if there's more than one place)
+  const pts = day.schedule.map(s => [s.point.lat, s.point.lng]);
+  if (new Set(pts.map(p => p.join(","))).size >= 2) {
+    L.polyline(pts, { color: DAY_ACCENTS[day.id], weight: 3, opacity: .75, dashArray: "6 8" }).addTo(map);
+  }
   day.schedule.forEach((s, i) => {
     const color = s.isDispensary ? "#2E7D32" : "#B23A55";
     const icon = L.divIcon({
@@ -357,14 +367,30 @@ function renderDayMap(elementId, day) {
   currentMap = map;
 }
 
-function renderTimelineRow(stop, index, isLast, day) {
-  const row = el("div", { class: "timeline-row" }, [
+function renderTimelineRow(stop, index, isLast, day, isToday, rowIndex, wrap) {
+  const sched = parseStopMinutes(stop.time);
+  let timeText = `${stop.time} · Stop ${index}`, shifted = false;
+  if (_shiftAnchor && sched != null && rowIndex > _shiftAnchor.index) {
+    timeText = `~${minutesToTime(sched + _shiftAnchor.deltaMin)} (plan ${stop.time})`;
+    shifted = true;
+  }
+  // On today's page, timed rows get a ⌁ "we're here now" pill that re-times
+  // everything after it — in memory only, never touches TripData.
+  const herePill = (isToday && sched != null) ? el("button", {
+    class: "here-pill", title: "we're here now",
+    onclick: e => {
+      e.stopPropagation();
+      _shiftAnchor = { index: rowIndex, deltaMin: nowMinutes(new Date()) - sched };
+      renderTimelineInto(wrap, day, isToday);
+    }
+  }, "⌁") : null;
+  const row = el("div", { class: "timeline-row", id: "stop-row-" + index }, [
     el("div", { class: "timeline-rail" }, [
       el("div", { class: "timeline-dot" + (stop.isDispensary ? " dispensary" : "") }),
       isLast ? null : el("div", { class: "timeline-line" })
     ]),
     el("div", { class: "timeline-content" }, [
-      el("div", { class: "time" }, `${stop.time} · Stop ${index}`),
+      el("div", { class: "time-row" }, [ el("div", { class: "time" + (shifted ? " shifted" : "") }, timeText), herePill ]),
       el("div", { class: "title" }, stop.title),
       stop.isDispensary ? el("div", { class: "dispensary-tag" }, ShowMode.on ? "🌿 CASA AMOR" : "🌿 DISPENSARY") : null,
       stop.desc ? muted(stop.desc) : null,
@@ -478,11 +504,16 @@ function renderTrip() {
 
   c.appendChild(el("h2", { class: "section-heading" }, "What the skies will offer"));
   TripData.weatherLegs.forEach(w => {
+    const leg = LEG_WX[w.name];
+    const wx = leg ? wxFor(leg.point, leg.date) : null;
     c.appendChild(el("div", { class: "info-card" }, [
       el("div", { style: "font-size:18px;font-weight:600;color:var(--primary);" }, w.name),
       muted(w.whenText),
       el("div", { style: "font-size:15px;font-weight:600;margin:4px 0;" }, `High ${w.high} · Low ${w.low}`),
-      bulletList(w.bullets)
+      bulletList(w.bullets),
+      wx ? el("div", { class: "wx-latest" },
+        `📡 Latest: High ${wx.high}° · Low ${wx.low}° · ${wx.precip != null ? wx.precip + "% rain" : wxCodeEmoji(wx.code)} (updated ${wxAgoText(wx.fetchedAt, new Date())})`
+      ) : null
     ]));
   });
 
@@ -925,6 +956,195 @@ async function renderBadgesCard(card, today) {
   card.appendChild(grid);
 }
 
+// ============================================================
+//  Phase 3 — Smart trip layer
+//  (every fn takes now = new Date() so logic is testable from console)
+// ============================================================
+
+// "1:30 PM" → minutes since midnight (null if the time isn't a real clock time).
+function parseStopMinutes(timeStr) {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(timeStr);
+  if (!m) return null;
+  let h = (+m[1]) % 12;
+  if (/PM/i.test(m[3])) h += 12;
+  return h * 60 + (+m[2]);
+}
+function nowMinutes(now) { return now.getHours() * 60 + now.getMinutes(); }
+function minutesToTime(min) {
+  min = ((min % 1440) + 1440) % 1440;
+  let h = Math.floor(min / 60); const m = min % 60;
+  const ap = h >= 12 ? "PM" : "AM";
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(m).padStart(2, "0")} ${ap}`;
+}
+
+// ---------- Now / Next strip (Days tab, trip days only, both modes) ----------
+function renderNowNext(now = new Date()) {
+  const view = document.getElementById("view-days");
+  let strip = document.getElementById("now-next");
+  const day = tripDayForDate(localISODate(now));
+  if (!day) { if (strip) strip.remove(); return; }
+  const nowMin = nowMinutes(now);
+  const timed = day.schedule.map((s, i) => ({ s, i, min: parseStopMinutes(s.time) })).filter(x => x.min != null);
+  let nowStop = null;
+  timed.forEach(x => { if (x.min <= nowMin) nowStop = x; });
+  const nextStop = timed.find(x => x.min > nowMin) || null;
+  if (!strip) {
+    strip = el("div", { id: "now-next", class: "now-next" });
+    view.querySelector(".hero").after(strip);
+  }
+  strip.innerHTML = "";
+  strip.onclick = () => {
+    openDayDetail(day.id);
+    const target = nextStop || nowStop;
+    if (target) setTimeout(() => {
+      const r = document.getElementById("stop-row-" + (target.i + 1));
+      if (r) r.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 420);
+  };
+  strip.append(
+    el("div", { class: "nn-part" }, [
+      el("span", { class: "nn-tag now" }, "NOW"),
+      el("span", { class: "nn-txt" }, nowStop ? `${nowStop.s.time} ${nowStop.s.title}` : "first up")
+    ]),
+    el("span", { class: "nn-sep" }, "▸"),
+    el("div", { class: "nn-part" }, [
+      el("span", { class: "nn-tag next" }, "NEXT"),
+      el("span", { class: "nn-txt" }, nextStop ? `${nextStop.s.time} ${nextStop.s.title}` : "that's a wrap")
+    ])
+  );
+}
+
+// ---------- "I've got a text!" banner (show mode, trip days, once/session) ----------
+function maybeTextAlert(now = new Date()) {
+  if (!ShowMode.on) return;
+  if (sessionStorage.getItem("hm_text_alert")) return;
+  const day = tripDayForDate(localISODate(now));
+  if (!day) return;
+  const nowMin = nowMinutes(now);
+  const timed = day.schedule.map(s => ({ s, min: parseStopMinutes(s.time) })).filter(x => x.min != null);
+  const next = timed.find(x => x.min > nowMin);
+  if (!next || (next.min - nowMin) > 90) return;
+  sessionStorage.setItem("hm_text_alert", "1");
+  const banner = el("div", { class: "text-alert" }, [ el("div", { class: "ta-line1" }, "I'VE GOT A TEXT! 💬") ]);
+  let stage = 0;
+  banner.addEventListener("click", e => {
+    if (e.target.classList.contains("ta-close")) return;
+    if (stage === 0) {
+      stage = 1;
+      banner.appendChild(el("div", { class: "ta-line2" }, `Islanders, please gather at: ${next.s.title} — ${next.s.time}`));
+    } else { banner.remove(); openDayDetail(day.id); }
+  });
+  banner.appendChild(el("button", { class: "ta-close", onclick: e => { e.stopPropagation(); banner.remove(); } }, "✕"));
+  document.body.appendChild(banner);
+}
+
+// ---------- Live weather (open-meteo, keyless) ----------
+const WX_TTL = 3 * 60 * 60 * 1000; // 3h
+function wxCodeEmoji(code) {
+  if (code <= 1) return "☀️"; if (code <= 3) return "⛅"; if (code <= 48) return "🌫";
+  if (code <= 67) return "🌧"; if (code <= 77) return "🌨"; if (code <= 82) return "🌧"; return "⛈";
+}
+function wxAgoText(fetchedAt, now) {
+  const mins = Math.max(0, Math.round((now.getTime() - fetchedAt) / 60000));
+  return mins < 60 ? `${mins}m ago` : `${Math.round(mins / 60)}h ago`;
+}
+async function fetchWeather(now = new Date()) {
+  if (!navigator.onLine) return;
+  const start = new Date(TRIP_START + "T00:00:00"), end = new Date(TRIP_END + "T00:00:00");
+  if (now > end) return;                                  // trip's over
+  if ((start - now) > 16 * 86400000) return;              // more than 16 days out
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem("hm_wx") || "{}"); } catch (e) { /* ignore */ }
+  if (cache.fetchedAt && (now.getTime() - cache.fetchedAt) < WX_TTL) return; // still fresh
+  const byPoint = {};
+  for (const [key, p] of Object.entries(WEATHER_POINTS)) {
+    try {
+      const u = `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}` +
+        `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode` +
+        `&temperature_unit=fahrenheit&timezone=auto&start_date=${TRIP_START}&end_date=${TRIP_END}`;
+      const res = await fetch(u);
+      if (res.ok) byPoint[key] = (await res.json()).daily;
+    } catch (e) { /* offline mid-run: keep what we got */ }
+  }
+  if (Object.keys(byPoint).length) {
+    localStorage.setItem("hm_wx", JSON.stringify({ fetchedAt: now.getTime(), byPoint }));
+    if (document.getElementById("view-trip").classList.contains("active")) renderTrip();
+  }
+}
+// Forecast for a point on a date, or null if we have no cached data for it.
+function wxFor(pointKey, dateISO) {
+  let cache; try { cache = JSON.parse(localStorage.getItem("hm_wx") || "{}"); } catch (e) { return null; }
+  const daily = cache.byPoint && cache.byPoint[pointKey];
+  if (!daily || !daily.time) return null;
+  const idx = daily.time.indexOf(dateISO);
+  if (idx < 0) return null;
+  return {
+    high: Math.round(daily.temperature_2m_max[idx]),
+    low: Math.round(daily.temperature_2m_min[idx]),
+    precip: daily.precipitation_probability_max[idx],
+    code: daily.weathercode[idx],
+    fetchedAt: cache.fetchedAt
+  };
+}
+// Map the Trip-tab weather legs to a representative point + date.
+const LEG_WX = {
+  "Seattle": { point: "seattle", date: "2026-08-08" },
+  "Forks & Olympic Peninsula": { point: "forks", date: "2026-08-06" },
+  "Alaska Inside Passage": { point: "juneau", date: "2026-08-10" }
+};
+
+// ---------- Pre-trip countdown + milestone ----------
+const MILESTONES = [
+  { date: "2026-07-22", label: "Two weeks out — book the dinners" },
+  { date: "2026-07-24", label: "Airbnb balance auto-pays" },
+  { date: "2026-07-29", label: "One week out — cards, meds, printing" },
+  { date: "2026-08-04", label: "Check-in opens 5:30 AM — pack the carry-ons" }
+];
+function renderCountdown(now = new Date()) {
+  const hero = document.querySelector("#view-days .hero");
+  let box = hero.querySelector(".countdown-box");
+  const start = new Date(TRIP_START + "T00:00:00");
+  if (now >= start) { if (box) box.remove(); return; } // during/after trip: hidden
+  if (!box) {
+    box = el("div", { class: "countdown-box" });
+    const status = hero.querySelector(".trip-status");
+    if (status) status.after(box); else hero.appendChild(box);
+  }
+  const diff = start - now;
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  box.innerHTML = "";
+  box.appendChild(el("div", { class: "countdown" }, `${d}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`));
+  const next = MILESTONES.find(ms => new Date(ms.date + "T00:00:00") >= now);
+  if (next) {
+    const label = new Date(next.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    box.appendChild(el("div", { class: "next-milestone" }, `Next: ${label} — ${next.label}`));
+  }
+}
+
+// Refresh the live Days-tab widgets (called on boot, on interval, on focus).
+function refreshTripWidgets(now = new Date()) { renderNowNext(now); renderCountdown(now); }
+
+// ---------- "We're here" running-late shift (today's day detail only) ----------
+let _shiftAnchor = null; // {index, deltaMin} — in-memory, resets on reload
+function renderTimelineInto(wrap, day, isToday) {
+  wrap.innerHTML = "";
+  if (_shiftAnchor) {
+    const sign = _shiftAnchor.deltaMin >= 0 ? "+" : "";
+    wrap.appendChild(el("div", { class: "shift-banner" }, [
+      el("span", {}, `running ${sign}${_shiftAnchor.deltaMin} min — breathe, it's vacation`),
+      el("button", { class: "shift-reset", onclick: () => { _shiftAnchor = null; renderTimelineInto(wrap, day, isToday); } }, "✕")
+    ]));
+  }
+  const timeline = el("div", { class: "timeline" });
+  day.schedule.forEach((stop, i) => {
+    timeline.appendChild(renderTimelineRow(stop, i + 1, i === day.schedule.length - 1, day, isToday, i, wrap));
+  });
+  wrap.appendChild(timeline);
+}
+
 // ---------- Tab navigation ----------
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -978,6 +1198,15 @@ if ("serviceWorker" in navigator) {
 // Warm the offline map-tile cache once the page is idle (tiles route through the
 // service worker's cache-first handler, so repeat runs never re-hit the network).
 window.addEventListener("load", () => setTimeout(prefetchAllMapTiles, 2500));
+// Pull live weather once online & within 16 days of the trip (throttled 3h).
+window.addEventListener("load", () => setTimeout(() => fetchWeather(), 1500));
 
 // ---------- Boot ----------
-applyShowMode(); // sets labels + hero + renders the day list
+applyShowMode();            // sets labels + hero + renders the day list
+refreshTripWidgets();       // Now/Next strip (trip days) + countdown (pre-trip)
+maybeTextAlert();           // "I've got a text!" if a stop is within 90 min
+// Keep the live widgets current without burning battery: 30s Now/Next, and the
+// countdown ticks every minute (renderCountdown is a no-op once the trip starts).
+setInterval(() => renderNowNext(), 30000);
+setInterval(() => renderCountdown(), 60000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshTripWidgets(); });

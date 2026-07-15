@@ -510,6 +510,54 @@ body::after {
 .badge-name { font-size: 10px; line-height: 1.2; text-align: center; color: var(--on-surface-variant); }
 .badge-cell.earned .badge-name { color: var(--on-surface); }
 
+/* ================= Phase 3 — smart trip layer ================= */
+
+/* Now / Next sticky strip */
+.now-next {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  display: flex; align-items: center; gap: 8px; margin: 0 20px 12px; padding: 10px 14px;
+  border-radius: 14px; border: 1px solid var(--outline); cursor: pointer;
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 8px 22px rgba(0,0,0,.3);
+}
+.now-next .nn-part { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.now-next .nn-tag { font-size: 10px; font-weight: 700; letter-spacing: .1em; }
+.now-next .nn-tag.now { color: var(--secondary); }
+.now-next .nn-tag.next { color: var(--primary); }
+.now-next .nn-txt { font-size: 13px; font-weight: 600; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now-next .nn-sep { color: var(--on-surface-variant); font-size: 14px; flex-shrink: 0; }
+
+/* "I've got a text!" banner */
+.text-alert {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1250; max-width: 560px; margin: 0 auto;
+  background: linear-gradient(135deg, var(--rose-deep), var(--rose)); color: #fff; cursor: pointer;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 46px 14px 18px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  animation: taDrop .5s ease-out, taShake .5s ease-in-out .5s 2;
+}
+.text-alert .ta-line1 { font-size: 16px; font-weight: 800; letter-spacing: .02em; }
+.text-alert .ta-line2 { font-size: 13px; font-weight: 600; margin-top: 6px; opacity: .96; }
+.text-alert .ta-close { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.2); border: none; color: #fff; font-size: 14px; cursor: pointer; }
+@keyframes taDrop { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+@keyframes taShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* Live-weather chips */
+.day-detail-hero .wx-chip { display: inline-block; margin-top: 6px; background: rgba(0,0,0,.42); color: #fff; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; }
+.wx-latest { font-size: 13px; font-weight: 600; color: var(--secondary); margin-top: 8px; }
+
+/* Pre-trip countdown */
+.countdown-box { margin-top: 8px; }
+.countdown { font-size: 20px; font-weight: 700; color: var(--gold); font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+.next-milestone { font-size: 12px; color: var(--on-surface-variant); margin-top: 2px; }
+
+/* Running-late shift */
+.shift-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--outline); background: color-mix(in srgb, var(--day-accent, var(--primary)) 22%, var(--surface)); font-size: 13px; font-weight: 600; color: var(--on-surface); }
+.shift-banner .shift-reset { background: none; border: none; color: var(--on-surface-variant); font-size: 14px; cursor: pointer; padding: 2px 6px; }
+.time-row { display: flex; align-items: center; gap: 8px; }
+.time-row .time.shifted { color: var(--day-accent, var(--primary)); }
+.here-pill { flex-shrink: 0; border: 1px solid var(--outline); background: var(--surface-variant); color: var(--day-accent, var(--primary)); font-size: 12px; line-height: 1; padding: 3px 7px; border-radius: 20px; cursor: pointer; }
+
 @media (prefers-reduced-motion: reduce) {
   .title-card::before { animation: none; }
   .title-card .tc-inner { animation-duration: .01s; }
@@ -518,4 +566,5 @@ body::after {
   .heart { display: none; }
   .note-flap, .note-body { animation: none; }
   .rose-btn { transition: none; }
+  .text-alert { animation: taDrop .4s ease-out; }
 }
