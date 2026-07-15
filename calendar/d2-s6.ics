@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d2-s6@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260806T133000
+DTEND:20260806T143000
+SUMMARY:Lake Quinault Rain Forest Loop
+DESCRIPTION:Drive the loop or do the easy 1.5 hr loop trail · world's lar
+ gest spruce tree
+LOCATION:Lake Quinault\, WA
+END:VEVENT
+END:VCALENDAR

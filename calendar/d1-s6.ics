@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d1-s6@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260805T153000
+DTEND:20260805T163000
+SUMMARY:Waterfront walk
+DESCRIPTION:Down to Pier 62\, then a short walk to Old Stove Brewing's Pi
+ ke Place taproom (it's not actually at Pier 62)
+LOCATION:Pier 62\, Seattle\, WA
+END:VEVENT
+END:VCALENDAR

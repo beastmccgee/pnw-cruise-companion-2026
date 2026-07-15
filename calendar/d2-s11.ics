@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d2-s11@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260806T191500
+DTEND:20260806T201500
+SUMMARY:First Beach\, La Push
+DESCRIPTION:Quileute Reservation — where Bella first finds Jacob in the b
+ ooks. Public beach\, ~25 min · the Quileute welcome visitors\, just keep
+  it respectful
+LOCATION:La Push\, WA 98350
+END:VEVENT
+END:VCALENDAR

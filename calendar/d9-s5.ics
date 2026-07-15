@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d9-s5@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260813T103000
+DTEND:20260813T113000
+SUMMARY:Married Man's Trail
+DESCRIPTION:Free waterfront walking trail along the creek — the old back 
+ route from Creek Street's red-light-district days
+LOCATION:Married Man's Trail\, Ketchikan\, AK
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d1-s9@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260805T200000
+DTEND:20260805T210000
+SUMMARY:Dinner near the Moxy
+DESCRIPTION:Westward · Re:Public — Lake Union Café has closed (now an eve
+ nt venue) and Mbar closed permanently in Nov 2025\, so both are dropped 
+ from the choices
+LOCATION:Westward\, Seattle\, WA
+END:VEVENT
+END:VCALENDAR

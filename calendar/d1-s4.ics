@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d1-s4@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260805T123000
+DTEND:20260805T133000
+SUMMARY:Pike Place Market lunch
+DESCRIPTION:Pike Place Chowder · Beecher's grilled cheese · Lowell's wind
+ ow table
+LOCATION:Pike Place Market\, Seattle\, WA
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,17 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d2-s10@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260806T185500
+DTEND:20260806T195500
+SUMMARY:Jacob Black's House
+DESCRIPTION:Wolf-themed vacation rental on La Push Rd\, painted red — it'
+ s a bookable cabin\, not a private home. Its old site (jacobblackshouse.
+ com) is dead\, so search current availability directly. Quick drive-by p
+ hoto\, respect any guests staying there
+LOCATION:8320 La Push Rd\, Forks\, WA 98331
+END:VEVENT
+END:VCALENDAR

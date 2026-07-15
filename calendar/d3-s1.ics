@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d3-s1@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260807T064500
+DTEND:20260807T074500
+SUMMARY:Load the car & check out
+DESCRIPTION:Airbnb checkout is by 10 AM — pack the RAV4 now so there's no
+  rush later in the morning
+LOCATION:2423 Mora Rd\, Forks\, WA 98331
+END:VEVENT
+END:VCALENDAR

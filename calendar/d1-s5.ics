@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d1-s5@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260805T140000
+DTEND:20260805T150000
+SUMMARY:Wander Pike Place
+DESCRIPTION:Fish throwers\, lower-level shops\, gum wall. Skip the origin
+ al Starbucks line — it's just a Starbucks.
+LOCATION:Pike Place Market\, Seattle\, WA
+END:VEVENT
+END:VCALENDAR

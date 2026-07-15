@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d1-s3@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260805T114500
+DTEND:20260805T124500
+SUMMARY:Have a Heart — Belltown
+DESCRIPTION:The dispensary stop — stock for the next 3 days · cash + ID. 
+ Done first thing so it's not competing with the rest of the day
+LOCATION:115 Blanchard St\, Seattle\, WA
+END:VEVENT
+END:VCALENDAR

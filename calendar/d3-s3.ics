@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d3-s3@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260807T090000
+DTEND:20260807T100000
+SUMMARY:Hoh Rainforest
+DESCRIPTION:Hall of Mosses loop (0.8 mi\, ~30 min) · get there early to b
+ eat the entrance line · it's a 52-min drive from Forks
+LOCATION:Hoh Rainforest Visitor Center\, Forks\, WA
+END:VEVENT
+END:VCALENDAR

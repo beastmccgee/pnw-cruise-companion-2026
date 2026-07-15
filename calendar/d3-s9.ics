@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d3-s9@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260807T112000
+DTEND:20260807T122000
+SUMMARY:Miller Tree Inn — "Cullen House"
+DESCRIPTION:The B&B that leans into its Cullen-family fame — fine to phot
+ ograph from the street
+LOCATION:654 E Division St\, Forks\, WA 98331
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,16 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d7-s2@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260811T093000
+DTEND:20260811T103000
+SUMMARY:Remedy Shoppe / BoomTown Buds
+DESCRIPTION:The dispensary stop\, done right at opening (Remedy Shoppe op
+ ens 9:30\, BoomTown 10) so it's out of the way before the 2 PM excursion
+  — 5–10 min walk from dock
+LOCATION:371 3rd Ave\, Skagway\, AK
+END:VEVENT
+END:VCALENDAR

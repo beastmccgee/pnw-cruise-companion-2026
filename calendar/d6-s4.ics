@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d6-s4@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260810T211500
+DTEND:20260810T221500
+SUMMARY:Ship departs Juneau
+DESCRIPTION:Note: no realistic window to also visit town — the excursion 
+ fills the whole port stop.
+LOCATION:Juneau\, AK
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d3-s5@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260807T103500
+DTEND:20260807T113500
+SUMMARY:Forks Community Hospital
+DESCRIPTION:The real hospital — Dr. Cullen's fictional workplace. It's a 
+ working hospital\, so exterior photo only
+LOCATION:530 Bogachiel Way\, Forks\, WA 98331
+END:VEVENT
+END:VCALENDAR

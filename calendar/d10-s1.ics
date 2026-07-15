@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d10-s1@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260814T210000
+DTEND:20260814T220000
+SUMMARY:Disembark
+DESCRIPTION:Catch the cruise shuttle bus to Inner Harbour (~CAD $10–15 ro
+ und trip) — not the Pacific Coach ferry\, it stops at 9 PM
+LOCATION:Ogden Point\, Victoria\, BC
+END:VEVENT
+END:VCALENDAR

@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d10-s2@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260814T212000
+DTEND:20260814T222000
+SUMMARY:Inner Harbour walk
+DESCRIPTION:Parliament Building lit with 3\,300+ lights\, Fairmont Empres
+ s glow\, harbour views · ~30 min loop
+LOCATION:Inner Harbour\, Victoria\, BC
+END:VEVENT
+END:VCALENDAR

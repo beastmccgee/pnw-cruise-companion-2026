@@ -28,44 +28,11 @@ function openMaps(address) {
 function openWebsite(url) { window.open(url, "_blank"); }
 function openSearch(q) { window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank"); }
 function openCall(phone) { window.location.href = "tel:" + phone; }
-function openCalendar(title, desc, address, isoDate, timeText) {
-  const start = parseStopStart(isoDate, timeText);
-  if (!start) { alert("This stop doesn't have a fixed time to add to your calendar."); return; }
-  const end = new Date(start.getTime() + 60 * 60000);
-  // Floating local time (no Z/TZID) so Apple Calendar treats it as whatever timezone
-  // the phone is actually in at the time — matches the trip-local intent of these stops.
-  const fmt = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
-  const pad = n => String(n).padStart(2, "0");
-  const escapeICS = s => (s || "").replace(/([,;])/g, "\\$1").replace(/\n/g, "\\n");
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Honeymoon Companion//EN",
-    "CALSCALE:GREGORIAN",
-    "BEGIN:VEVENT",
-    "UID:" + Date.now() + "-" + Math.random().toString(36).slice(2) + "@honeymoon",
-    "DTSTAMP:" + fmt(new Date()) + "Z",
-    "DTSTART:" + fmt(start),
-    "DTEND:" + fmt(end),
-    "SUMMARY:" + escapeICS(title),
-    "DESCRIPTION:" + escapeICS(desc),
-    "LOCATION:" + escapeICS(address),
-    "END:VEVENT",
-    "END:VCALENDAR"
-  ].join("\r\n");
-  window.location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-}
-function parseStopStart(isoDate, timeText) {
-  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)/.exec(timeText || "");
-  if (!m) return null;
-  let hour = parseInt(m[1], 10);
-  const minute = parseInt(m[2], 10);
-  const ampm = m[3];
-  if (ampm === "PM" && hour !== 12) hour += 12;
-  if (ampm === "AM" && hour === 12) hour = 0;
-  const d = new Date(isoDate + "T00:00:00");
-  d.setHours(hour, minute, 0, 0);
-  return d;
+// Pre-generated static .ics files (see generate_ics.mjs). iOS Safari blocks data: URI
+// navigation, so a real https .ics URL is the only reliable way to reach Apple Calendar.
+// The files are pre-cached by the service worker, so this works offline at sea too.
+function openCalendar(dayId, stopIndex) {
+  window.open(`calendar/d${dayId}-s${stopIndex}.ics`, "_blank");
 }
 
 function linkBtn(label, onClick) {
@@ -73,30 +40,133 @@ function linkBtn(label, onClick) {
 }
 
 // ---------- Days tab ----------
+// Local YYYY-MM-DD (not toISOString, which is UTC and rolls the date after 5 PM PT)
+function localISODate(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function renderDaysList() {
   const container = document.getElementById("days-list");
   container.innerHTML = "";
+  const today = localISODate();
   TripData.days.forEach(day => {
-    const card = el("div", { class: "day-card", onclick: () => openDayDetail(day.id) }, [
+    const isToday = day.calendarDate === today;
+    const card = el("div", { class: "day-card" + (isToday ? " today" : ""), onclick: () => openDayDetail(day.id) }, [
       el("div", {
         class: "photo",
         style: `background-image:url('${DAY_PHOTOS[day.id]}')`
       }, [
         el("div", { class: "badge" }, String(day.id)),
-        day.twilightTheme ? el("div", { class: "twilight-tag" }, "🌙 TWILIGHT") : null
+        isToday ? el("div", { class: "today-tag" }, "❤ TODAY") : null,
+        day.twilightTheme && !isToday ? el("div", { class: "twilight-tag" }, "🌙 TWILIGHT") : null
       ]),
       el("div", { class: "body" }, [
         el("div", { class: "date" }, day.date.toUpperCase()),
         el("div", { class: "title heading-font" }, day.title),
         el("p", { class: "subtitle" }, day.subtitle),
         el("div", { class: "footer-row" }, [
-          el("span", { class: "stops-count" }, `${day.schedule.length} stops planned`),
+          el("span", { class: "stops-count" }, `${day.schedule.length} stop${day.schedule.length === 1 ? "" : "s"} planned`),
           el("span", { style: "color:var(--primary);" }, "›")
         ])
       ])
     ]);
     container.appendChild(card);
   });
+
+  renderHeroStatus(today);
+  // During the trip, bring today's card into view on open
+  const todayCard = container.querySelector(".day-card.today");
+  if (todayCard) setTimeout(() => todayCard.scrollIntoView({ behavior: "smooth", block: "center" }), 600);
+}
+
+// One warm line under the hero dates: countdown before, day counter during, memory after.
+function renderHeroStatus(today) {
+  const hero = document.querySelector("#view-days .hero");
+  let line = hero.querySelector(".trip-status");
+  if (!line) {
+    line = el("div", { class: "trip-status" });
+    hero.insertBefore(line, hero.querySelector(".hearts"));
+  }
+  const MS_DAY = 86400000;
+  const start = new Date("2026-08-05T00:00:00");
+  const end = new Date("2026-08-15T00:00:00");
+  const now = new Date(today + "T00:00:00");
+  if (now < start) {
+    const days = Math.round((start - now) / MS_DAY);
+    line.textContent = days === 1 ? "1 day to go ✈" : `${days} days to go ✈`;
+  } else if (now <= end) {
+    const n = Math.round((now - start) / MS_DAY) + 1;
+    line.textContent = `Day ${n} of 11 — enjoy every minute`;
+  } else {
+    line.textContent = "Married, home, and full of memories ❤";
+  }
+}
+
+// ---------- Map math (shared by the live map and the offline tile prefetcher) ----------
+// Web-mercator pixel projection at zoom z (256px tiles), same as Leaflet's internals.
+const TILE_SUBDOMAINS = "abc";
+function projX(lng, z) { return (lng + 180) / 360 * 256 * Math.pow(2, z); }
+function projY(lat, z) {
+  const s = Math.sin(lat * Math.PI / 180);
+  return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * 256 * Math.pow(2, z);
+}
+
+function mapViewportSize() {
+  return { w: Math.min(window.innerWidth, 560) - 40, h: 220 };
+}
+
+// Deterministic center+zoom for a day's map. Used for rendering AND for computing
+// which tiles to prefetch, so the offline cache always matches what gets displayed.
+function dayMapView(day) {
+  const pts = day.schedule.map(s => s.point);
+  const lats = pts.map(p => p.lat), lngs = pts.map(p => p.lng);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+  const center = [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+  if (minLat === maxLat && minLng === maxLng) return { center, zoom: 10 };
+  const { w, h } = mapViewportSize();
+  const availW = w - 48, availH = h - 48;
+  for (let z = 14; z >= 3; z--) {
+    const pw = projX(maxLng, z) - projX(minLng, z);
+    const ph = projY(minLat, z) - projY(maxLat, z);
+    if (pw <= availW && ph <= availH) return { center, zoom: z };
+  }
+  return { center, zoom: 3 };
+}
+
+// Every tile the day map shows (plus a half-tile pan margin), as concrete URLs.
+function dayTileUrls(day) {
+  const { center, zoom } = dayMapView(day);
+  const { w, h } = mapViewportSize();
+  const cx = projX(center[1], zoom), cy = projY(center[0], zoom);
+  const x0 = Math.floor((cx - w / 2 - 128) / 256), x1 = Math.floor((cx + w / 2 + 128) / 256);
+  const y0 = Math.floor((cy - h / 2 - 128) / 256), y1 = Math.floor((cy + h / 2 + 128) / 256);
+  const n = Math.pow(2, zoom), urls = [];
+  for (let x = x0; x <= x1; x++) {
+    for (let y = y0; y <= y1; y++) {
+      if (y < 0 || y >= n) continue;
+      const wx = ((x % n) + n) % n;
+      const sub = TILE_SUBDOMAINS[Math.abs(x + y) % TILE_SUBDOMAINS.length];
+      urls.push(`https://${sub}.tile.openstreetmap.org/${zoom}/${wx}/${y}.png`);
+    }
+  }
+  return urls;
+}
+
+// Quietly warm the tile cache for all 11 days so every map works offline even if a
+// day was never opened at home. The service worker stores each tile permanently;
+// re-runs are served from cache, so this costs the network exactly once.
+async function prefetchAllMapTiles() {
+  if (!navigator.onLine) return;
+  const urls = [...new Set(TripData.days.flatMap(dayTileUrls))];
+  let i = 0;
+  const worker = async () => {
+    while (i < urls.length) {
+      const u = urls[i++];
+      try { await fetch(u, { mode: "no-cors" }); } catch (e) { /* offline mid-run: fine */ }
+    }
+  };
+  await Promise.all([0, 1, 2, 3].map(worker));
 }
 
 // ---------- Day detail ----------
@@ -140,12 +210,11 @@ function openDayDetail(dayId) {
 
 function renderDayMap(elementId, day) {
   if (currentMap) { currentMap.remove(); currentMap = null; }
-  const pts = day.schedule.map(s => s.point);
-  const lats = pts.map(p => p.lat), lngs = pts.map(p => p.lng);
-  const center = [(Math.min(...lats) + Math.max(...lats)) / 2, (Math.min(...lngs) + Math.max(...lngs)) / 2];
-  const map = L.map(elementId, { zoomControl: false, attributionControl: false }).setView(center, 10);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
-  const bounds = [];
+  const view = dayMapView(day);
+  const map = L.map(elementId, { zoomControl: false, attributionControl: false }).setView(view.center, view.zoom);
+  // OSM's tile policy requires visible attribution
+  L.control.attribution({ prefix: false }).addAttribution("© OpenStreetMap").addTo(map);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18, subdomains: TILE_SUBDOMAINS }).addTo(map);
   day.schedule.forEach((s, i) => {
     const color = s.isDispensary ? "#2E7D32" : "#B23A55";
     const icon = L.divIcon({
@@ -154,9 +223,7 @@ function renderDayMap(elementId, day) {
       iconSize: [24, 24], iconAnchor: [12, 12]
     });
     L.marker([s.point.lat, s.point.lng], { icon }).addTo(map);
-    bounds.push([s.point.lat, s.point.lng]);
   });
-  if (bounds.length > 1) map.fitBounds(bounds, { padding: [24, 24] });
   currentMap = map;
 }
 
@@ -171,13 +238,13 @@ function renderTimelineRow(stop, index, isLast, day) {
       el("div", { class: "title" }, stop.title),
       stop.isDispensary ? el("div", { class: "dispensary-tag" }, "🌿 DISPENSARY") : null,
       stop.desc ? muted(stop.desc) : null,
-      renderStopLinks(stop, day)
+      renderStopLinks(stop, day, index)
     ])
   ]);
   return row;
 }
 
-function renderStopLinks(stop, day) {
+function renderStopLinks(stop, day, stopIndex) {
   const row = el("div", { class: "link-row" });
   row.appendChild(linkBtn("🍎 Maps", () => openMaps(stop.address)));
 
@@ -197,7 +264,7 @@ function renderStopLinks(stop, day) {
   if (stop.phone) row.appendChild(linkBtn("📞 Call", () => openCall(stop.phone)));
 
   if (/^\d{1,2}:\d{2}\s*(AM|PM)/.test(stop.time)) {
-    row.appendChild(linkBtn("📅 Calendar", () => openCalendar(stop.title, stop.desc, stop.address, day.calendarDate, stop.time)));
+    row.appendChild(linkBtn("📅 Calendar", () => openCalendar(day.id, stopIndex)));
   }
   return row;
 }
@@ -454,6 +521,10 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(() => {}));
 }
+
+// Warm the offline map-tile cache once the page is idle (tiles route through the
+// service worker's cache-first handler, so repeat runs never re-hit the network).
+window.addEventListener("load", () => setTimeout(prefetchAllMapTiles, 2500));
 
 // ---------- Boot ----------
 renderDaysList();

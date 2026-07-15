@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d10-s3@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260814T220000
+DTEND:20260814T230000
+SUMMARY:Bard & Banker pub
+DESCRIPTION:Government St — Canadian beer or Scottish whisky\, often live
+  music. Alternatives: Irish Times Pub\, Garrick's Head Pub
+LOCATION:1022 Government St\, Victoria\, BC
+END:VEVENT
+END:VCALENDAR

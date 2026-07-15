@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//T&C Honeymoon Companion//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:d3-s4@tc-honeymoon-2026
+DTSTAMP:20260715T000000Z
+DTSTART:20260807T101500
+DTEND:20260807T111500
+SUMMARY:Forks Chamber of Commerce
+DESCRIPTION:Bella's two trucks + the "Welcome to Forks" sign + the Twilig
+ ht gift shop\, all in one stop
+LOCATION:1411 S Forks Ave\, Forks\, WA 98331
+END:VEVENT
+END:VCALENDAR
