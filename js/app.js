@@ -37,12 +37,10 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
-// Native-feel cross-fades where supported (Safari 18+), instant everywhere else
-function withTransition(fn) {
-  if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    document.startViewTransition(fn);
-  } else fn();
-}
+// NOTE: document.startViewTransition ghost-doubles against the fixed SVG
+// backdrop + mix-blend grain layer (seen on desktop Chromium, user-reported).
+// Navigation is instant on purpose; episode title cards are the cinematic moment.
+function withTransition(fn) { fn(); }
 
 const TAB_LABELS = {
   days:      { normal: "Days",     show: "Episodes" },
