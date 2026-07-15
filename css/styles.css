@@ -10,72 +10,93 @@
   font-weight: 400 900;
   font-style: italic;
 }
+@font-face {
+  font-family: "Great Vibes";
+  src: url("../fonts/great_vibes.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
+/* One signature look: "midnight rose" — a cinematic dark-romance grade with
+   aurora color fields drifting behind glass panels. No light/dark switching;
+   this app has an art direction, not a settings page. */
 :root {
-  --blush: #FDF1EA;
-  --blush-deep: #F7DED1;
-  --cream: #FFFAF5;
-  --rose: #B23A55;
-  --rose-deep: #8A1F38;
-  --rose-soft: #E58BA0;
-  --gold: #C08A4E;
-  --ink: #3A2A2E;
-  --ink-soft: #6E5A5E;
-  --line: #EACEBA;
-  --dispensary-green: #2E7D32;
+  --rose: #E8798F;
+  --rose-deep: #B23A55;
+  --rose-soft: #F2A9BC;
+  --gold: #E6C08A;
+  --teal: #6FD6C4;
+  --dispensary-green: #58C767;
 
-  --bg: var(--blush);
-  --surface: var(--cream);
-  --surface-variant: var(--blush-deep);
+  --bg: #16090F;
+  --bg-2: #241019;
+  --surface: rgba(46, 24, 33, .66);
+  --surface-solid: #2A161E;
+  --surface-variant: rgba(72, 36, 48, .55);
   --primary: var(--rose);
-  --on-primary: #ffffff;
+  --on-primary: #23080F;
   --secondary: var(--gold);
-  --on-bg: var(--ink);
-  --on-surface: var(--ink);
-  --on-surface-variant: var(--ink-soft);
-  --outline: var(--line);
+  --on-bg: #FBEDF1;
+  --on-surface: #FBEDF1;
+  --on-surface-variant: #C9A8B2;
+  --outline: rgba(242, 169, 188, .16);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #241417;
-    --surface: #1C1013;
-    --surface-variant: #2E1B1F;
-    --primary: #E58BA0;
-    --on-primary: #1C1013;
-    --secondary: #E0B37C;
-    --on-bg: #F6E9EC;
-    --on-surface: #F6E9EC;
-    --on-surface-variant: #CBB0B5;
-    --outline: #4A2F34;
-  }
+/* Aurora backdrop: three huge pre-blurred color fields drifting very slowly */
+#bg {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden;
+  background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 55%, #1B0B13 100%);
 }
+#bg .blob {
+  position: absolute; width: 130vmax; height: 130vmax; border-radius: 50%;
+  opacity: .5; will-change: transform;
+}
+#bg .blob.b1 {
+  top: -70vmax; left: -50vmax;
+  background: radial-gradient(circle at center, rgba(232,121,143,.34) 0%, transparent 58%);
+  animation: drift1 44s ease-in-out infinite alternate;
+}
+#bg .blob.b2 {
+  bottom: -75vmax; right: -55vmax;
+  background: radial-gradient(circle at center, rgba(111,214,196,.22) 0%, transparent 58%);
+  animation: drift2 56s ease-in-out infinite alternate;
+}
+#bg .blob.b3 {
+  top: 10vmax; right: -70vmax;
+  background: radial-gradient(circle at center, rgba(230,192,138,.16) 0%, transparent 60%);
+  animation: drift3 66s ease-in-out infinite alternate;
+}
+@keyframes drift1 { to { transform: translate(16vmax, 10vmax) rotate(18deg); } }
+@keyframes drift2 { to { transform: translate(-14vmax, -8vmax) rotate(-14deg); } }
+@keyframes drift3 { to { transform: translate(-18vmax, 6vmax); } }
+@media (prefers-reduced-motion: reduce) { #bg .blob { animation: none; } }
 
 /* Twilight theme override — applied to day detail pages for days 2 & 3 */
 .twilight {
-  --bg: #0B0E15;
-  --surface: #1C232F;
-  --surface-variant: #141A22;
-  --primary: #D8E1EA;
+  --surface: rgba(26, 33, 45, .68);
+  --surface-solid: #1C232F;
+  --surface-variant: rgba(40, 52, 70, .55);
+  --primary: #AFC5DA;
   --on-primary: #05070B;
-  --secondary: #B23A55;
+  --secondary: #E8798F;
   --on-bg: #D8E1EA;
   --on-surface: #D8E1EA;
-  --on-surface-variant: #9FB0C0;
-  --outline: #3A4653;
+  --on-surface-variant: #93A6BA;
+  --outline: rgba(175, 197, 218, .16);
   color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
+html { background: #16090F; }
 html, body {
   margin: 0; padding: 0;
-  background: var(--bg);
   color: var(--on-bg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  color-scheme: dark;
 }
-body { transition: background-color .3s ease, color .3s ease; }
 
 .heading-font { font-family: "Playfair Display", Georgia, serif; font-style: italic; }
 
@@ -107,14 +128,15 @@ body { transition: background-color .3s ease, color .3s ease; }
 }
 .day-card {
   background: var(--surface);
-  border-radius: 22px;
+  border: 1px solid var(--outline);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 10px 24px rgba(0,0,0,.12);
-  margin-bottom: 14px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  margin-bottom: 16px;
   cursor: pointer;
-  transition: transform .15s ease;
 }
-.day-card:active { transform: scale(0.98); }
 .day-card .photo {
   height: 150px;
   background-size: cover;
@@ -158,9 +180,13 @@ body { transition: background-color .3s ease, color .3s ease; }
 .section-heading { font-size: 22px; margin: 20px 20px 10px; color: var(--primary); font-weight: 500; }
 .info-card {
   background: var(--surface);
-  border-radius: 18px;
+  border: 1px solid var(--outline);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 20px;
   padding: 16px;
   margin: 0 20px 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .pill {
   display: inline-block;
@@ -208,7 +234,9 @@ body { transition: background-color .3s ease, color .3s ease; }
 .day-detail-hero .title-label { font-size: 24px; margin: 2px 0 0; }
 
 .day-body { padding: 14px 20px 20px; }
-.day-map { width: 100%; height: 220px; border-radius: 18px; overflow: hidden; margin-bottom: 18px; }
+/* position+z-index traps Leaflet's high-z internal panes in their own stacking
+   context so maps can't paint over the tab bar or full-screen overlays */
+.day-map { width: 100%; height: 220px; border-radius: 18px; overflow: hidden; margin-bottom: 18px; position: relative; z-index: 0; }
 
 .timeline { position: relative; }
 .timeline-row { display: flex; gap: 10px; padding-bottom: 20px; }
@@ -232,7 +260,10 @@ body { transition: background-color .3s ease, color .3s ease; }
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
   color: var(--primary); font-size: 14px;
 }
-.checklist-row .checkbox.checked { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.checklist-row .checkbox.checked {
+  background: var(--primary); border-color: var(--primary); color: var(--on-primary);
+  box-shadow: 0 0 12px rgba(232,121,143,.45);
+}
 .checklist-row .text { flex: 1; font-size: 14px; }
 .checklist-row .text.checked { color: var(--on-surface-variant); text-decoration: line-through; }
 .checklist-row .del-btn { background: none; border: none; color: var(--on-surface-variant); font-size: 13px; cursor: pointer; padding: 6px; }
@@ -266,6 +297,7 @@ body { transition: background-color .3s ease, color .3s ease; }
 .a2hs-banner {
   position: fixed; left: 12px; right: 12px; bottom: 88px;
   max-width: 536px; margin: 0 auto;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   background: var(--surface); border: 1px solid var(--outline);
   border-radius: 16px; padding: 12px 14px;
   box-shadow: 0 8px 20px rgba(0,0,0,.15);
@@ -285,4 +317,103 @@ body { transition: background-color .3s ease, color .3s ease; }
 
 @media (min-width: 560px) {
   #app { border-left: 1px solid var(--outline); border-right: 1px solid var(--outline); }
+}
+
+/* ================= v2 "Season 1" design layer ================= */
+
+.script-font { font-family: "Great Vibes", "Playfair Display", cursive; font-style: normal; }
+
+/* Film-grain wash over everything — makes flat colors feel printed, not painted */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 99; pointer-events: none;
+  opacity: .05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+/* Hero glow on the Days tab (the aurora does the heavy lifting behind it) */
+#view-days .hero {
+  position: relative; padding-bottom: 14px;
+}
+.hero .script-line {
+  font-family: "Great Vibes", cursive; font-size: 34px; line-height: 1.1;
+  color: var(--rose-soft); margin-top: 4px;
+  text-shadow: 0 0 24px rgba(232,121,143,.55), 0 0 60px rgba(232,121,143,.25);
+}
+.hero .cast-line { font-size: 11px; font-weight: 600; letter-spacing: .12em; color: var(--on-surface-variant); margin-top: 8px; text-transform: uppercase; }
+
+/* Frosted-glass tab bar */
+@supports (backdrop-filter: blur(1px)) {
+  .tab-bar {
+    background: color-mix(in srgb, var(--surface) 74%, transparent);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  }
+}
+
+/* Springier cards */
+.day-card { transition: transform .28s cubic-bezier(.2,1.6,.4,1), box-shadow .28s ease; }
+.day-card:active { transform: scale(.965); }
+
+/* Episode chip on day-card photos (show mode) */
+.day-card .ep-chip {
+  position: absolute; top: 12px; left: 12px; z-index: 1;
+  background: rgba(0,0,0,.45); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  padding: 5px 10px; border-radius: 20px; backdrop-filter: blur(6px);
+}
+.day-card .ep-title { font-size: 13px; color: var(--day-accent, var(--secondary)); font-weight: 600; margin-top: 1px; }
+
+/* Per-day accent grading (set as --day-accent on card/detail roots) */
+.day-card .date { color: var(--day-accent, var(--secondary)); }
+#day-detail-content .timeline-dot:not(.dispensary) { background: var(--day-accent, var(--primary)); }
+#day-detail-content .timeline-content .time { color: var(--day-accent, var(--secondary)); }
+
+/* ---------- Episode title card overlay ---------- */
+.title-card {
+  position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center;
+  background-size: cover; background-position: center; overflow: hidden;
+}
+.title-card::before {
+  content: ""; position: absolute; inset: -6%;
+  background: inherit; background-size: cover; background-position: center;
+  animation: kenburns 1.8s ease-out forwards;
+}
+.title-card::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.25) 45%, rgba(0,0,0,.65)),
+              radial-gradient(120% 90% at 50% 110%, var(--tc-accent, rgba(178,58,85,.45)), transparent 70%);
+}
+.title-card .tc-inner { position: relative; z-index: 1; text-align: center; color: #fff; padding: 0 32px; animation: tcFade .7s ease-out both .15s; }
+.title-card .tc-ep { font-size: 12px; font-weight: 700; letter-spacing: .34em; opacity: .9; }
+.title-card .tc-title { font-family: "Playfair Display", serif; font-style: italic; font-size: 34px; margin: 10px 0 6px; line-height: 1.15; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
+.title-card .tc-sig { font-family: "Great Vibes", cursive; font-size: 22px; opacity: .85; }
+.title-card.leaving { animation: tcOut .45s ease-in forwards; }
+@keyframes kenburns { from { transform: scale(1.12); } to { transform: scale(1.0); } }
+@keyframes tcFade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes tcOut { to { opacity: 0; } }
+
+/* ---------- Documentary Crew toggle + toast ---------- */
+.crew-toggle {
+  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; z-index: 2;
+  border: 1px solid var(--outline); background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border-radius: 20px; font-size: 15px; padding: 5px 10px; cursor: pointer; line-height: 1;
+}
+.crew-toggle.off { filter: grayscale(1); opacity: .55; }
+.toast {
+  position: fixed; left: 50%; bottom: 104px; transform: translateX(-50%) translateY(8px);
+  background: #3A1D27; border: 1px solid var(--outline); color: #fff; font-size: 13px; font-weight: 600;
+  padding: 10px 16px; border-radius: 20px; z-index: 70; opacity: 0;
+  transition: opacity .25s ease, transform .25s ease; pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: 86vw; text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Producer's-note subtitle under section headings (show mode) */
+.producer-note { font-size: 12px; color: var(--on-surface-variant); margin: -6px 20px 12px; font-style: italic; }
+
+@media (prefers-reduced-motion: reduce) {
+  .title-card::before { animation: none; }
+  .title-card .tc-inner { animation-duration: .01s; }
+  .day-card { transition: none; }
+  html { scroll-behavior: auto; }
 }

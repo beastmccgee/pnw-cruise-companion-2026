@@ -7,8 +7,7 @@
 
 <!-- Standard PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FDF1EA" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#241417" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#16090F">
 
 <!-- iOS "add to home screen" standalone-app behavior -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,15 +23,22 @@
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+<div id="bg" aria-hidden="true">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+</div>
 <div id="app">
 
   <!-- ============ DAYS ============ -->
   <section id="view-days" class="view active">
     <div class="hero">
-      <div class="eyebrow">T &amp; C · HONEYMOON COMPANION</div>
+      <button class="crew-toggle" id="crew-toggle" title="Documentary Crew on/off">🎬</button>
+      <div class="eyebrow" id="hero-eyebrow">T &amp; C · HONEYMOON COMPANION</div>
       <h1 class="heading-font">Forever begins in the<br>Pacific Northwest</h1>
+      <div class="script-line">always &amp; forever</div>
       <div class="dates">August 5 – 15, 2026</div>
-      <div class="hearts">❤ ❤ ❤</div>
+      <div class="cast-line" id="hero-cast" style="display:none;">Starring Tanner &amp; Chloe · coupled up since day one</div>
     </div>
     <div id="days-list" class="day-stack"></div>
   </section>

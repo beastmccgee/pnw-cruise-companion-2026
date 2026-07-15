@@ -384,3 +384,25 @@ const DAY_PHOTOS = {
   7: "images/day7_whitepass.jpg", 8: "images/day8_glacierbay.jpg", 9: "images/day9_ketchikan.jpg",
   10: "images/day10_victoria.jpg", 11: "images/day11_airplane.jpg"
 };
+
+// Per-day accent colors extracted from the photos (generate_palettes.py), hand-tuned
+// where the algorithm got over-excited. Every episode gets its own color grade.
+const DAY_ACCENTS = {
+  1: "#7288DF", 2: "#F25F5F", 3: "#ABD0DC", 4: "#81B4ED", 5: "#7F9BD2",
+  6: "#5FBCF2", 7: "#7FD8D8", 8: "#84A7CD", 9: "#ABABE3", 10: "#8CB7E1", 11: "#769DDA"
+};
+
+// Episode titles — the reality-show layer ("Documentary Crew" mode)
+const EPISODE_TITLES = {
+  1: "The Islanders Arrive",
+  2: "Twilight Territory",
+  3: "A Mossy Situation",
+  4: "The Villa Sets Sail",
+  5: "No One Gets Voted Off",
+  6: "Whales, Actually",
+  7: "Full Steam Ahead",
+  8: "Cold Hands, Warm Hearts",
+  9: "Salmon Says",
+  10: "The Canadian Episode",
+  11: "The Season Finale"
+};

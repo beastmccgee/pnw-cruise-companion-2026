@@ -1,6 +1,6 @@
 // Bump CACHE_NAME on ANY app change — fetches are cache-first, so installed copies
 // only pick up updates when a new SW version installs and re-caches everything.
-const CACHE_NAME = "honeymoon-pwa-v2";
+const CACHE_NAME = "honeymoon-pwa-v3";
 const TILE_CACHE = "honeymoon-tiles-v1";
 
 const CORE_ASSETS = [
@@ -18,6 +18,7 @@ const CORE_ASSETS = [
   "vendor/leaflet/images/marker-shadow.png",
   "fonts/playfair_variable.ttf",
   "fonts/playfair_variable_italic.ttf",
+  "fonts/great_vibes.woff2",
   "icons/icon-192.png",
   "icons/icon-512.png",
   "icons/apple-touch-icon-180.png",

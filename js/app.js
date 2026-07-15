@@ -21,6 +21,80 @@ function bulletList(items) {
 function pill(text) { return el("span", { class: "pill" }, text); }
 function muted(text) { return el("p", { class: "muted", style: "margin:4px 0;" }, text); }
 
+// ---------- Show mode ("Documentary Crew") ----------
+const ShowMode = {
+  get on() { return localStorage.getItem("hm_show_mode") !== "0"; },
+  toggle() { localStorage.setItem("hm_show_mode", this.on ? "0" : "1"); applyShowMode(); }
+};
+
+let toastTimer = null;
+function toast(msg) {
+  let t = document.querySelector(".toast");
+  if (!t) { t = el("div", { class: "toast" }); document.body.appendChild(t); }
+  t.textContent = msg;
+  requestAnimationFrame(() => t.classList.add("show"));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// Native-feel cross-fades where supported (Safari 18+), instant everywhere else
+function withTransition(fn) {
+  if (document.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.startViewTransition(fn);
+  } else fn();
+}
+
+const TAB_LABELS = {
+  days:      { normal: "Days",     show: "Episodes" },
+  prep:      { normal: "Prep",     show: "Pre-Prod" },
+  trip:      { normal: "Trip",     show: "Trip" },
+  confirms:  { normal: "Confirms", show: "Binder" }
+};
+
+function applyShowMode() {
+  const on = ShowMode.on;
+  document.querySelectorAll(".tab-btn").forEach(b => {
+    b.lastChild.textContent = TAB_LABELS[b.dataset.tab][on ? "show" : "normal"];
+  });
+  document.getElementById("hero-eyebrow").textContent =
+    on ? "THE HONEYMOON · SEASON 1" : "T & C · HONEYMOON COMPANION";
+  document.getElementById("hero-cast").style.display = on ? "" : "none";
+  document.getElementById("crew-toggle").classList.toggle("off", !on);
+  // Producer's note on the Prep tab
+  const prepHero = document.querySelector("#view-prep .hero");
+  let note = document.querySelector("#view-prep .producer-note");
+  if (on && !note) {
+    note = el("div", { class: "producer-note" }, "produced with loving, forensic precision by Tanner");
+    prepHero.after(note);
+  } else if (!on && note) note.remove();
+  renderDaysList();
+}
+
+// ---------- Episode title card ----------
+function playTitleCard(day, onDone) {
+  if (!ShowMode.on || sessionStorage.getItem("tc_seen_" + day.id)) { onDone(); return; }
+  sessionStorage.setItem("tc_seen_" + day.id, "1"); // once per session per day
+  const card = el("div", {
+    class: "title-card",
+    style: `background-image:url('${DAY_PHOTOS[day.id]}'); --tc-accent:${DAY_ACCENTS[day.id]}66;`
+  }, [
+    el("div", { class: "tc-inner" }, [
+      el("div", { class: "tc-ep" }, `EPISODE ${day.id}`),
+      el("div", { class: "tc-title" }, EPISODE_TITLES[day.id]),
+      el("div", { class: "tc-sig" }, "Tanner ♥ Chloe")
+    ])
+  ]);
+  const dismiss = () => {
+    if (card.classList.contains("leaving")) return;
+    card.classList.add("leaving");
+    setTimeout(() => card.remove(), 460);
+  };
+  card.addEventListener("click", dismiss);
+  document.body.appendChild(card);
+  onDone(); // build the page underneath while the card plays
+  setTimeout(dismiss, 1700);
+}
+
 // ---------- External actions ----------
 function openMaps(address) {
   window.open("https://maps.apple.com/?q=" + encodeURIComponent(address), "_blank");
@@ -49,19 +123,25 @@ function renderDaysList() {
   const container = document.getElementById("days-list");
   container.innerHTML = "";
   const today = localISODate();
+  const show = ShowMode.on;
   TripData.days.forEach(day => {
     const isToday = day.calendarDate === today;
-    const card = el("div", { class: "day-card" + (isToday ? " today" : ""), onclick: () => openDayDetail(day.id) }, [
+    const card = el("div", {
+      class: "day-card" + (isToday ? " today" : ""),
+      style: `--day-accent:${DAY_ACCENTS[day.id]};`,
+      onclick: () => openDayDetail(day.id)
+    }, [
       el("div", {
         class: "photo",
         style: `background-image:url('${DAY_PHOTOS[day.id]}')`
       }, [
-        el("div", { class: "badge" }, String(day.id)),
+        show ? el("div", { class: "ep-chip" }, `EP ${day.id}`) : el("div", { class: "badge" }, String(day.id)),
         isToday ? el("div", { class: "today-tag" }, "❤ TODAY") : null,
         day.twilightTheme && !isToday ? el("div", { class: "twilight-tag" }, "🌙 TWILIGHT") : null
       ]),
       el("div", { class: "body" }, [
         el("div", { class: "date" }, day.date.toUpperCase()),
+        show ? el("div", { class: "ep-title" }, `“${EPISODE_TITLES[day.id]}”`) : null,
         el("div", { class: "title heading-font" }, day.title),
         el("p", { class: "subtitle" }, day.subtitle),
         el("div", { class: "footer-row" }, [
@@ -85,20 +165,21 @@ function renderHeroStatus(today) {
   let line = hero.querySelector(".trip-status");
   if (!line) {
     line = el("div", { class: "trip-status" });
-    hero.insertBefore(line, hero.querySelector(".hearts"));
+    hero.insertBefore(line, document.getElementById("hero-cast"));
   }
   const MS_DAY = 86400000;
   const start = new Date("2026-08-05T00:00:00");
   const end = new Date("2026-08-15T00:00:00");
   const now = new Date(today + "T00:00:00");
+  const show = ShowMode.on;
   if (now < start) {
     const days = Math.round((start - now) / MS_DAY);
-    line.textContent = days === 1 ? "1 day to go ✈" : `${days} days to go ✈`;
+    line.textContent = (days === 1 ? "1 day" : `${days} days`) + (show ? " until the season premiere ✈" : " to go ✈");
   } else if (now <= end) {
     const n = Math.round((now - start) / MS_DAY) + 1;
-    line.textContent = `Day ${n} of 11 — enjoy every minute`;
+    line.textContent = show ? `Episode ${n} of 11 — now airing` : `Day ${n} of 11 — enjoy every minute`;
   } else {
-    line.textContent = "Married, home, and full of memories ❤";
+    line.textContent = show ? "Season 1 complete — renewed forever ❤" : "Married, home, and full of memories ❤";
   }
 }
 
@@ -175,19 +256,25 @@ let currentMap = null;
 function openDayDetail(dayId) {
   const day = TripData.days.find(d => d.id === dayId);
   if (!day) return;
+  playTitleCard(day, () => buildDayDetail(day));
+}
+
+function buildDayDetail(day) {
   const root = document.getElementById("day-detail-content");
   root.innerHTML = "";
   root.classList.toggle("twilight", !!day.twilightTheme);
+  root.style.setProperty("--day-accent", DAY_ACCENTS[day.id]);
+  const show = ShowMode.on;
 
   const hero = el("div", {
     class: "day-detail-hero",
     style: `background-image:url('${DAY_PHOTOS[day.id]}')`
   }, [
-    el("button", { class: "back-btn", onclick: () => showView("days") }, "‹"),
+    el("button", { class: "back-btn", onclick: () => withTransition(() => showView("days")) }, "‹"),
     el("div", { class: "hero-text" }, [
       day.twilightTheme ? el("div", { class: "twilight-chip" }, "🌙 TWILIGHT SAGA DETOUR") : null,
-      el("div", { class: "date-label" }, day.date.toUpperCase()),
-      el("div", { class: "title-label heading-font" }, day.title)
+      el("div", { class: "date-label" }, (show ? `EPISODE ${day.id} · ` : "") + day.date.toUpperCase()),
+      el("div", { class: "title-label heading-font" }, show ? `“${EPISODE_TITLES[day.id]}”` : day.title)
     ])
   ]);
   root.appendChild(hero);
@@ -236,7 +323,7 @@ function renderTimelineRow(stop, index, isLast, day) {
     el("div", { class: "timeline-content" }, [
       el("div", { class: "time" }, `${stop.time} · Stop ${index}`),
       el("div", { class: "title" }, stop.title),
-      stop.isDispensary ? el("div", { class: "dispensary-tag" }, "🌿 DISPENSARY") : null,
+      stop.isDispensary ? el("div", { class: "dispensary-tag" }, ShowMode.on ? "🌿 CASA AMOR" : "🌿 DISPENSARY") : null,
       stop.desc ? muted(stop.desc) : null,
       renderStopLinks(stop, day, index)
     ])
@@ -274,7 +361,7 @@ function toggleMenuOptions(anchorBtn, stop, day) {
   if (existing) { existing.remove(); return; }
   const popup = el("div", {
     class: "menu-popup",
-    style: "position:absolute;background:var(--surface);border:1px solid var(--outline);border-radius:12px;padding:6px;box-shadow:0 8px 20px rgba(0,0,0,.18);z-index:5;margin-top:4px;"
+    style: "position:absolute;background:var(--surface-solid);border:1px solid var(--outline);border-radius:12px;padding:6px;box-shadow:0 12px 28px rgba(0,0,0,.5);z-index:5;margin-top:4px;"
   });
   stop.restaurantOptions.forEach(opt => {
     popup.appendChild(el("div", {
@@ -496,11 +583,19 @@ function showView(name) {
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
-    showView(tab);
-    if (tab === "prep") renderPrep();
-    if (tab === "trip") renderTrip();
-    if (tab === "confirms") renderConfirms();
+    withTransition(() => {
+      showView(tab);
+      if (tab === "prep") renderPrep();
+      if (tab === "trip") renderTrip();
+      if (tab === "confirms") renderConfirms();
+    });
   });
+});
+
+// Documentary Crew toggle
+document.getElementById("crew-toggle").addEventListener("click", () => {
+  ShowMode.toggle();
+  toast(ShowMode.on ? "🎬 Cameras rolling — welcome to Season 1" : "Documentary crew sent home 👋");
 });
 
 // ---------- Add to Home Screen banner (iOS Safari only, not already standalone) ----------
@@ -527,4 +622,4 @@ if ("serviceWorker" in navigator) {
 window.addEventListener("load", () => setTimeout(prefetchAllMapTiles, 2500));
 
 // ---------- Boot ----------
-renderDaysList();
+applyShowMode(); // sets labels + hero + renders the day list
