@@ -558,6 +558,53 @@ body::after {
 .time-row .time.shifted { color: var(--day-accent, var(--primary)); }
 .here-pill { flex-shrink: 0; border: 1px solid var(--outline); background: var(--surface-variant); color: var(--day-accent, var(--primary)); font-size: 12px; line-height: 1; padding: 3px 7px; border-radius: 20px; cursor: pointer; }
 
+/* ================= Phase 4 — keepsake ================= */
+
+.finale-entry {
+  margin-top: 14px; border: none; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, var(--rose-deep), var(--gold));
+  font-size: 15px; font-weight: 700; padding: 12px 24px; border-radius: 24px;
+  box-shadow: 0 0 24px rgba(232,121,143,.5); animation: finaleGlow 2.4s ease-in-out infinite;
+}
+@keyframes finaleGlow { 0%,100% { box-shadow: 0 0 18px rgba(232,121,143,.4); } 50% { box-shadow: 0 0 34px rgba(230,192,138,.7); } }
+
+.finale-stage { position: fixed; inset: 0; z-index: 1300; background: #0A0410; overflow: hidden; }
+.finale-bar { position: absolute; top: calc(env(safe-area-inset-top,0px) + 8px); left: 12px; right: 12px; display: flex; gap: 4px; z-index: 3; }
+.finale-seg { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.25); overflow: hidden; }
+.finale-seg-fill { height: 100%; width: 0; background: #fff; }
+.finale-close { position: absolute; top: calc(env(safe-area-inset-top,0px) + 18px); right: 14px; z-index: 4; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.16); color: #fff; border: none; font-size: 16px; cursor: pointer; }
+.finale-slides { position: absolute; inset: 0; }
+.finale-slide { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #fff; padding: 44px 28px; background-size: cover; background-position: center; }
+.finale-slide.active { display: flex; animation: fSlideIn .5s ease-out; }
+@keyframes fSlideIn { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+
+.finale-title { background: radial-gradient(120% 90% at 50% 40%, #3A1430, #0A0410); }
+.ft-eyebrow { font-size: 14px; font-weight: 700; letter-spacing: .34em; }
+.ft-script { font-size: 54px; line-height: 1; color: var(--rose-soft); margin: 8px 0; text-shadow: 0 0 30px rgba(232,121,143,.6); }
+.ft-sig { font-size: 14px; opacity: .85; letter-spacing: .04em; }
+
+.finale-day { justify-content: flex-end; align-items: flex-start; text-align: left; }
+.finale-day .fd-wash { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.85), rgba(0,0,0,.12) 55%, rgba(0,0,0,.5)); }
+.fd-inner { position: relative; z-index: 1; width: 100%; }
+.fd-ep { font-size: 12px; font-weight: 700; letter-spacing: .24em; opacity: .9; }
+.fd-title { font-size: 32px; margin: 4px 0 10px; }
+.fd-caption { font-size: 15px; line-height: 1.5; opacity: .95; margin-bottom: 8px; }
+.fd-roses { font-size: 14px; }
+.fd-roses div { margin-top: 4px; color: var(--rose-soft); }
+
+.finale-badges { background: radial-gradient(120% 90% at 50% 40%, #241019, #0A0410); }
+.finale-badges .fd-inner { text-align: center; }
+.fb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 12px; margin-top: 18px; }
+.fb-emoji { font-size: 34px; }
+.fb-name { font-size: 12px; margin-top: 4px; line-height: 1.2; }
+.fb-date { font-size: 11px; color: var(--gold); margin-top: 2px; }
+
+.finale-ending { background: radial-gradient(120% 90% at 50% 45%, #2A1130, #06040A); }
+.fc-hearts { font-size: 30px; letter-spacing: 8px; }
+.fc-script { font-size: 50px; line-height: 1; color: var(--rose-soft); margin: 14px 0 8px; text-shadow: 0 0 30px rgba(232,121,143,.6); }
+
+.recouple .recouple-text { font-size: 22px; color: var(--on-surface); margin: 14px 4px 4px; line-height: 1.35; }
+
 @media (prefers-reduced-motion: reduce) {
   .title-card::before { animation: none; }
   .title-card .tc-inner { animation-duration: .01s; }
@@ -567,4 +614,6 @@ body::after {
   .note-flap, .note-body { animation: none; }
   .rose-btn { transition: none; }
   .text-alert { animation: taDrop .4s ease-out; }
+  .finale-entry { animation: none; }
+  .finale-slide.active { animation: none; }
 }

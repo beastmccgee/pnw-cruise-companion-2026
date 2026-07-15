@@ -186,6 +186,7 @@ function renderDaysList() {
   });
 
   renderHeroStatus(today);
+  renderFinaleEntry(today);
   // During the trip, bring today's card into view on open
   const todayCard = container.querySelector(".day-card.today");
   if (todayCard) setTimeout(() => todayCard.scrollIntoView({ behavior: "smooth", block: "center" }), 600);
@@ -446,6 +447,27 @@ function toggleMenuOptions(anchorBtn, stop, day) {
 function renderPrep() {
   renderChecklistGroups("packing-groups", ChecklistStore.getPacking(), groups => ChecklistStore.savePacking(groups));
   renderChecklistGroups("prep-groups", ChecklistStore.getPrep(), groups => ChecklistStore.savePrep(groups));
+  renderArchiveCard();
+}
+
+// Backup / restore of the device-local keepsakes (photos excluded — too big,
+// and they never leave the phone anyway).
+function renderArchiveCard() {
+  const view = document.getElementById("view-prep");
+  if (view.querySelector(".archive-card")) return;
+  view.appendChild(el("h2", { class: "section-heading" }, "Backup"));
+  const restoreInput = el("input", { type: "file", accept: "application/json,.json", hidden: "" });
+  restoreInput.addEventListener("change", () => { if (restoreInput.files[0]) restoreBackup(restoreInput.files[0]); restoreInput.value = ""; });
+  const card = el("div", { class: "info-card archive-card" }, [
+    pill("🗄 Production Archive"),
+    muted("Save your notes, roses, confessionals and badges to a file — or restore them onto another phone. Photos stay on this phone."),
+    el("div", { class: "link-row", style: "margin-top:10px;" }, [
+      el("button", { class: "rose-save", onclick: downloadBackup }, "Download backup"),
+      el("button", { class: "rose-save", style: "background:var(--surface-variant);color:var(--primary);", onclick: () => restoreInput.click() }, "Restore"),
+      restoreInput
+    ])
+  ]);
+  view.appendChild(card);
 }
 
 function renderChecklistGroups(containerId, groups, onSave) {
@@ -1145,6 +1167,198 @@ function renderTimelineInto(wrap, day, isToday) {
   wrap.appendChild(timeline);
 }
 
+// ============================================================
+//  Phase 4 — Keepsake (finale reel, backup/restore, easter egg)
+// ============================================================
+
+// ---------- ▶ Season Finale reel ----------
+async function openFinale() {
+  if (document.querySelector(".finale-stage")) return;
+  const [photos, journals, roses, badges] = await Promise.all([
+    Store.all("photos"), Store.all("journal"), Store.all("roses"), Store.all("badges")
+  ]);
+  const firstPhoto = {};
+  photos.slice().sort((a, b) => a.ts - b.ts).forEach(p => { if (!firstPhoto[p.date]) firstPhoto[p.date] = p.blob; });
+  const journalBy = {}; journals.forEach(j => { journalBy[j.date] = j.text; });
+  const rosesBy = {};   roses.forEach(r => { rosesBy[r.date] = r; });
+  const earned = badges.slice().sort((a, b) => a.earnedDate.localeCompare(b.earnedDate));
+  const urls = [];
+
+  const slides = [];
+  // 1 — title
+  slides.push(el("div", { class: "finale-slide finale-title" }, [
+    el("div", { class: "ft-eyebrow" }, "THE HONEYMOON"),
+    el("div", { class: "ft-script script-font" }, "season one"),
+    el("div", { class: "ft-sig" }, "Tanner ♥ Chloe · Aug 2026")
+  ]));
+  // 2..12 — per day
+  TripData.days.forEach(day => {
+    let bg = DAY_PHOTOS[day.id];
+    if (firstPhoto[day.calendarDate]) { const u = URL.createObjectURL(firstPhoto[day.calendarDate]); urls.push(u); bg = u; }
+    const r = rosesBy[day.calendarDate];
+    const roseLines = [];
+    if (r && (r.tRoses || r.tLine)) roseLines.push(`🌹×${r.tRoses} T→C${r.tLine ? " “" + r.tLine + "”" : ""}`);
+    if (r && (r.cRoses || r.cLine)) roseLines.push(`🌹×${r.cRoses} C→T${r.cLine ? " “" + r.cLine + "”" : ""}`);
+    slides.push(el("div", { class: "finale-slide finale-day", style: `background-image:url('${bg}')` }, [
+      el("div", { class: "fd-wash" }),
+      el("div", { class: "fd-inner" }, [
+        el("div", { class: "fd-ep" }, `EPISODE ${day.id}`),
+        el("div", { class: "fd-title heading-font" }, EPISODE_TITLES[day.id]),
+        journalBy[day.calendarDate] ? el("div", { class: "fd-caption" }, journalBy[day.calendarDate]) : null,
+        roseLines.length ? el("div", { class: "fd-roses" }, roseLines.map(t => el("div", {}, t))) : null
+      ])
+    ]));
+  });
+  // 13 — badge wall
+  slides.push(el("div", { class: "finale-slide finale-badges" }, [
+    el("div", { class: "fd-inner" }, [
+      el("div", { class: "fd-ep" }, "COUPLE ACHIEVEMENTS"),
+      earned.length
+        ? el("div", { class: "fb-grid" }, earned.map(b => {
+            const def = BADGES.find(x => x.id === b.id) || { emoji: "🏅", name: b.id };
+            return el("div", { class: "fb-cell" }, [
+              el("div", { class: "fb-emoji" }, def.emoji),
+              el("div", { class: "fb-name" }, def.name),
+              el("div", { class: "fb-date" }, `Aug ${augDayNum(b.earnedDate)}`)
+            ]);
+          }))
+        : el("div", { class: "fd-caption" }, "The whole season, and not one badge awarded. Very mysterious.")
+    ])
+  ]));
+  // 14 — closing
+  slides.push(el("div", { class: "finale-slide finale-ending" }, [
+    el("div", { class: "fc-hearts" }, "❤ 💗 💞 ❤ 💗"), // static hearts (also for reduced-motion)
+    el("div", { class: "fc-script script-font" }, "renewed forever"),
+    el("div", { class: "ft-sig" }, "Tanner ♥ Chloe")
+  ]));
+
+  const stage = el("div", { class: "finale-stage" });
+  const bar = el("div", { class: "finale-bar" });
+  const segs = slides.map(() => { const fill = el("div", { class: "finale-seg-fill" }); bar.appendChild(el("div", { class: "finale-seg" }, fill)); return fill; });
+  stage.appendChild(bar);
+  stage.appendChild(el("button", { class: "finale-close", onclick: e => { e.stopPropagation(); exit(); } }, "✕"));
+  const holder = el("div", { class: "finale-slides" });
+  slides.forEach(s => holder.appendChild(s));
+  stage.appendChild(holder);
+
+  let idx = 0, timer = null;
+  const AUTO = 5000;
+  function paint() {
+    slides.forEach((s, i) => s.classList.toggle("active", i === idx));
+    segs.forEach((f, i) => { f.style.transition = "none"; f.style.width = i < idx ? "100%" : "0%"; });
+    // start the current segment's fill animation on the next frame
+    requestAnimationFrame(() => {
+      const f = segs[idx];
+      if (!f) return;
+      if (_reduceMotion()) { f.style.width = "100%"; return; }
+      f.style.transition = `width ${AUTO}ms linear`;
+      f.style.width = "100%";
+    });
+    if (slides[idx].classList.contains("finale-ending")) heartRain();
+  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(() => go(1), AUTO); }
+  function go(dir) {
+    const n = idx + dir;
+    if (n < 0) { idx = 0; }
+    else if (n >= slides.length) { exit(); return; }
+    else idx = n;
+    paint(); schedule();
+  }
+  function heartRain() {
+    if (_reduceMotion()) return;
+    [0, 300, 600, 900, 1200].forEach(d => setTimeout(() => heartBurst(window.innerWidth * (.2 + Math.random() * .6), window.innerHeight * .4), d));
+  }
+  function exit() { clearTimeout(timer); urls.forEach(u => URL.revokeObjectURL(u)); stage.remove(); }
+
+  holder.addEventListener("click", e => {
+    const rect = holder.getBoundingClientRect();
+    (e.clientX - rect.left > rect.width / 2) ? go(1) : go(-1);
+  });
+  document.body.appendChild(stage);
+  paint(); schedule();
+}
+
+// Days-hero entry: a glowing finale button once the trip is over.
+function renderFinaleEntry(today) {
+  const hero = document.querySelector("#view-days .hero");
+  let btn = hero.querySelector(".finale-entry");
+  if (today > TRIP_END) {
+    if (!btn) {
+      btn = el("button", { class: "finale-entry", onclick: openFinale }, "▶ The Season Finale");
+      hero.appendChild(btn);
+    }
+  } else if (btn) btn.remove();
+}
+
+// ---------- 🗄 Backup & restore ----------
+async function downloadBackup() {
+  const [journal, roses, confessional, badges] = await Promise.all([
+    Store.all("journal"), Store.all("roses"), Store.all("confessional"), Store.all("badges")
+  ]);
+  const data = { version: 1, exported: new Date().toISOString(), journal, roses, confessional, badges, settings: { showMode: ShowMode.on } };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = el("a", { href: url, download: `honeymoon-backup-${localISODate().replace(/-/g, "")}.json` });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast("Backup downloaded 🗄");
+}
+function restoreBackup(file) {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    let data; try { data = JSON.parse(reader.result); } catch (e) { toast("That isn't a valid backup file"); return; }
+    if (data.version !== 1) { toast("Unsupported backup version"); return; }
+    if (!confirm("Restore this backup? Notes, roses, confessionals and badges will be overwritten where they overlap. (Photos are never in a backup.)")) return;
+    for (const j of data.journal || []) await Store.put("journal", j);
+    for (const r of data.roses || []) await Store.put("roses", r);
+    for (const cf of data.confessional || []) await Store.put("confessional", cf);
+    for (const b of data.badges || []) await Store.put("badges", b);
+    if (data.settings && typeof data.settings.showMode === "boolean") localStorage.setItem("hm_show_mode", data.settings.showMode ? "1" : "0");
+    toast("Backup restored ❤");
+    applyShowMode();
+  };
+  reader.readAsText(file);
+}
+
+// ---------- 💍 Recoupling easter egg ----------
+function openRecoupling() {
+  const overlay = el("div", { class: "note-modal recouple" }, [
+    el("div", { class: "note-card", onclick: e => e.stopPropagation() }, [
+      pill("RECOUPLING CEREMONY"),
+      el("div", { class: "recouple-text heading-font" }, "Tanner and Chloe have decided to recouple."),
+      el("div", { class: "muted", style: "text-align:center;margin:6px 0 16px;" }, "(they were never really at risk)"),
+      el("button", { class: "note-close", onclick: () => overlay.remove() }, "obviously ❤")
+    ])
+  ]);
+  overlay.addEventListener("click", () => overlay.remove());
+  document.body.appendChild(overlay);
+  [0, 250, 500].forEach(d => setTimeout(() => heartBurst(window.innerWidth / 2, window.innerHeight * .6), d));
+}
+
+// Both gestures live on the hero script-line: long-press (800ms) previews the
+// finale any time; five quick taps within 3s triggers the recoupling ceremony.
+function wireHeroGestures() {
+  const line = document.querySelector("#view-days .script-line");
+  if (!line || line.dataset.wired) return;
+  line.dataset.wired = "1";
+  let pressTimer = null, longFired = false, taps = [];
+  line.addEventListener("pointerdown", () => {
+    longFired = false;
+    pressTimer = setTimeout(() => { longFired = true; openFinale(); }, 800);
+  });
+  const clear = () => clearTimeout(pressTimer);
+  line.addEventListener("pointerup", () => {
+    clear();
+    if (longFired) return; // long-press already handled
+    const now = Date.now();
+    taps = taps.filter(t => now - t < 3000);
+    taps.push(now);
+    if (taps.length >= 5) { taps = []; openRecoupling(); }
+  });
+  line.addEventListener("pointerleave", clear);
+  line.addEventListener("pointercancel", clear);
+}
+
 // ---------- Tab navigation ----------
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -1205,6 +1419,7 @@ window.addEventListener("load", () => setTimeout(() => fetchWeather(), 1500));
 applyShowMode();            // sets labels + hero + renders the day list
 refreshTripWidgets();       // Now/Next strip (trip days) + countdown (pre-trip)
 maybeTextAlert();           // "I've got a text!" if a stop is within 90 min
+wireHeroGestures();         // long-press → finale preview; 5 taps → recoupling
 // Keep the live widgets current without burning battery: 30s Now/Next, and the
 // countdown ticks every minute (renderCountdown is a no-op once the trip starts).
 setInterval(() => renderNowNext(), 30000);
