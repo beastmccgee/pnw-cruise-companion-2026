@@ -7,7 +7,7 @@
 
 <!-- Standard PWA -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#16090F">
+<meta name="theme-color" content="#190B20">
 
 <!-- iOS "add to home screen" standalone-app behavior -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,6 +24,65 @@
 </head>
 <body>
 <div id="bg" aria-hidden="true">
+  <!-- Alaskan beach at dusk ×  the villa: spruce shore meets one stubborn palm -->
+  <svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#190B20"/>
+        <stop offset=".42" stop-color="#3A1430"/>
+        <stop offset=".74" stop-color="#823049"/>
+        <stop offset=".93" stop-color="#CE6355"/>
+        <stop offset="1" stop-color="#EE9A60"/>
+      </linearGradient>
+      <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#A9564E"/>
+        <stop offset=".1" stop-color="#41394E"/>
+        <stop offset=".38" stop-color="#14303B"/>
+        <stop offset="1" stop-color="#0A1B24"/>
+      </linearGradient>
+      <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+        <stop offset="0" stop-color="#FFE0B0" stop-opacity=".8"/>
+        <stop offset=".45" stop-color="#F2A05F" stop-opacity=".35"/>
+        <stop offset="1" stop-color="#F2A05F" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="sunpath" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#FFC98E" stop-opacity=".4"/>
+        <stop offset="1" stop-color="#FFC98E" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <rect width="390" height="432" fill="url(#sky)"/>
+    <ellipse cx="195" cy="430" rx="170" ry="95" fill="url(#glow)"/>
+    <circle cx="195" cy="411" r="24" fill="#FFDFAE"/>
+    <path d="M0 432 L48 372 L86 412 L122 366 L170 432 Z" fill="#221022"/>
+    <path d="M212 432 L262 362 L300 402 L344 352 L390 432 Z" fill="#1D0E1F"/>
+    <rect y="432" width="390" height="412" fill="url(#sea)"/>
+    <path d="M172 432 L218 432 L252 700 L138 700 Z" fill="url(#sunpath)"/>
+    <g fill="#FFC98E" opacity=".13">
+      <ellipse cx="195" cy="474" rx="72" ry="2.6"/>
+      <ellipse cx="168" cy="506" rx="42" ry="2"/>
+      <ellipse cx="228" cy="540" rx="56" ry="2"/>
+      <ellipse cx="186" cy="584" rx="34" ry="1.8"/>
+    </g>
+    <g fill="#130912">
+      <path d="M30 347 L16 396 L25 393 L8 432 L52 432 L35 393 L44 396 Z"/>
+      <path d="M64 375 L54 408 L60 406 L48 432 L80 432 L68 406 L74 408 Z"/>
+      <path d="M-2 388 L-8 414 L-4 412 L-14 432 L14 432 L4 412 L8 414 Z"/>
+    </g>
+    <g stroke="#130912" fill="none" stroke-linecap="round">
+      <path d="M390 474 C 362 436 352 404 358 374" stroke-width="8"/>
+      <g stroke-width="5">
+        <path d="M358 374 C 332 360 306 358 286 368"/>
+        <path d="M358 374 C 342 350 320 340 298 340"/>
+        <path d="M358 374 C 362 346 376 330 390 324"/>
+        <path d="M358 374 C 376 358 388 354 390 356"/>
+        <path d="M358 374 C 347 390 327 398 307 398"/>
+      </g>
+    </g>
+    <g fill="#130912">
+      <circle cx="352" cy="380" r="5"/>
+      <circle cx="362" cy="384" r="4.5"/>
+    </g>
+  </svg>
   <div class="blob b1"></div>
   <div class="blob b2"></div>
   <div class="blob b3"></div>
