@@ -405,6 +405,79 @@ const WEATHER_POINTS = {
 };
 const DAY_WEATHER = { 1:"seattle", 2:"forks", 3:"forks", 4:"seattle", 5:null, 6:"juneau", 7:"skagway", 8:"glacier", 9:"ketchikan", 10:"victoria", 11:"seattle" };
 
+// ---- Quests & gamification ----
+// Couple levels, unlocked by total quest XP. Top tier (520) is reachable well
+// before completing all ~540 XP of quests.
+const COUPLE_LEVELS = [
+  { min: 0,   title: "New Recruits" },
+  { min: 70,  title: "Coupled Up" },
+  { min: 160, title: "Villa Regulars" },
+  { min: 270, title: "Fan Favorites" },
+  { min: 390, title: "Finalists" },
+  { min: 520, title: "Endgame ❤" }
+];
+
+// Quests: day 0 = "anytime" couple quests; 1–11 = that episode. Some award an
+// existing badge (by id) automatically the first time they're completed.
+const QUESTS = [
+  // Anytime / couple
+  { id: "any-roses",     day: 0, emoji: "🌹", title: "Hold a full Rose Ceremony", desc: "Give all five roses, both directions.", xp: 15 },
+  { id: "any-scrapbook", day: 0, emoji: "📸", title: "Start the scrapbook", desc: "Add your first photo to any day.", xp: 10 },
+  { id: "any-note",      day: 0, emoji: "💌", title: "Open a love note on its day", desc: "No peeking early, islander.", xp: 10 },
+  { id: "any-seawalk",   day: 0, emoji: "🤝", title: "Hold hands on the SeaWalk", desc: "Glass floor, 28 ft over the ocean.", xp: 15 },
+  { id: "any-formal",    day: 0, emoji: "🥂", title: "Dress up for a formal night", desc: "Two of them on the sailing.", xp: 15, badge: "formal-stunners" },
+  { id: "any-chowder",   day: 0, emoji: "🍲", title: "Split a bowl of chowder", desc: "Pike Place or Ketchikan — your call.", xp: 10, badge: "chowder-champs" },
+  { id: "any-casa",      day: 0, emoji: "🌿", title: "Visit Casa Amor, leave together", desc: "The dispensary stop. Stay loyal.", xp: 10, badge: "casa-amor-loyal" },
+  { id: "any-itinerary", day: 0, emoji: "📋", title: "Follow the itinerary a full day", desc: "Every stop. Tanner is watching.", xp: 15, badge: "spreadsheet-respecter" },
+  { id: "any-sunset",    day: 0, emoji: "🌇", title: "Catch a sunset together", desc: "Any port, any deck.", xp: 10 },
+  // Day 1 — Seattle
+  { id: "d1-fish",  day: 1, emoji: "🐟", title: "Catch the fishmongers' throw", desc: "Pike Place fish flying.", xp: 10 },
+  { id: "d1-gum",   day: 1, emoji: "🫧", title: "Add to the Gum Wall", desc: "Gross. Iconic. Mandatory.", xp: 10 },
+  { id: "d1-kerry", day: 1, emoji: "💋", title: "Kiss at Kerry Park at sunset", desc: "Best free skyline in the city.", xp: 20 },
+  { id: "d1-meal",  day: 1, emoji: "🍽️", title: "First married meal in Seattle", desc: "Make it count.", xp: 10 },
+  // Day 2 — Twilight / Forks
+  { id: "d2-sign",   day: 2, emoji: "🧛", title: "Photo at the Treaty Line", desc: "The fan-marked edge of Quileute land.", xp: 10, badge: "twilight-pilgrims" },
+  { id: "d2-spruce", day: 2, emoji: "🌲", title: "Find the world's largest spruce", desc: "Lake Quinault.", xp: 10 },
+  { id: "d2-rialto", day: 2, emoji: "🌅", title: "Sunset at Rialto Beach", desc: "Golden hour on the sea stacks (~8:35).", xp: 15 },
+  { id: "d2-quote",  day: 2, emoji: "📖", title: "Say a Twilight line out loud", desc: "Loser buys the coffee.", xp: 10 },
+  // Day 3 — rainforest → Seattle
+  { id: "d3-moss",  day: 3, emoji: "🌿", title: "Walk the Hall of Mosses", desc: "0.8 mi of dripping green.", xp: 10 },
+  { id: "d3-truck", day: 3, emoji: "🚚", title: "Photo with Bella's truck", desc: "Forks Chamber of Commerce.", xp: 10 },
+  { id: "d3-ferry", day: 3, emoji: "⛴️", title: "Ferry selfie to Seattle", desc: "Top deck, skyline behind you.", xp: 10, badge: "ferry-survivors" },
+  // Day 4 — embark
+  { id: "d4-sanctuary", day: 4, emoji: "🏃", title: "Sprint to the Sanctuary desk", desc: "Book the cabana before it's gone.", xp: 15 },
+  { id: "d4-sailaway",  day: 4, emoji: "🚢", title: "Watch sail-away up top", desc: "Bring layers.", xp: 10 },
+  { id: "d4-anniv",     day: 4, emoji: "🥂", title: "Book an anniversary dinner", desc: "Crown Grill or Sabatini's.", xp: 10 },
+  // Day 5 — at sea
+  { id: "d5-muts",    day: 5, emoji: "🎬", title: "Movies Under the Stars", desc: "Blanket, popcorn, the two of you.", xp: 10 },
+  { id: "d5-sealegs", day: 5, emoji: "🌊", title: "Get your sea legs", desc: "Walk a moving deck like a pro.", xp: 10, badge: "sea-legs" },
+  { id: "d5-nothing", day: 5, emoji: "🛋️", title: "Do nothing for a full hour", desc: "Together. That's the whole quest.", xp: 15, badge: "sanctuary-sloths" },
+  // Day 6 — Juneau
+  { id: "d6-whale",   day: 6, emoji: "🐋", title: "See your first whale", desc: "The whole reason.", xp: 20, badge: "first-whale" },
+  { id: "d6-glacier", day: 6, emoji: "🧊", title: "Touch or photograph a glacier", desc: "Mendenhall.", xp: 15, badge: "glacier-cuddle" },
+  { id: "d6-taste",   day: 6, emoji: "🍺", title: "Taste something Alaskan", desc: "Beer, salmon, king crab.", xp: 10 },
+  // Day 7 — Skagway
+  { id: "d7-summit",   day: 7, emoji: "🚂", title: "Ride White Pass to the summit", desc: "Scenic rail into the clouds.", xp: 20, badge: "summit-sippers" },
+  { id: "d7-redonion", day: 7, emoji: "🍷", title: "Cheers at the Red Onion", desc: "The old saloon.", xp: 10 },
+  { id: "d7-nap",      day: 7, emoji: "😴", title: "Nap-on-shoulder on the train", desc: "Photo evidence required.", xp: 10 },
+  // Day 8 — Glacier Bay
+  { id: "d8-rangers",  day: 8, emoji: "🌅", title: "On deck when rangers board", desc: "Before 6:30 AM. Brutal. Worth it.", xp: 15, badge: "early-risers" },
+  { id: "d8-wildlife", day: 8, emoji: "🦭", title: "Spot wildlife from the rail", desc: "Seals, otters, eagles.", xp: 10 },
+  { id: "d8-hands",    day: 8, emoji: "🧤", title: "Warm each other's hands", desc: "It's the cold one.", xp: 10 },
+  // Day 9 — Ketchikan
+  { id: "d9-creek",  day: 9, emoji: "🪵", title: "Walk Creek Street", desc: "Boardwalk on pilings.", xp: 10 },
+  { id: "d9-ladder", day: 9, emoji: "🐟", title: "Watch the salmon ladder", desc: "Mid-August spawning run.", xp: 10, badge: "salmon-witness" },
+  { id: "d9-salmon", day: 9, emoji: "🍣", title: "Eat fresh-caught salmon", desc: "Alaska Fish House.", xp: 10 },
+  // Day 10 — Victoria
+  { id: "d10-parliament", day: 10, emoji: "🌃", title: "Parliament lit up at night", desc: "3,300+ lights.", xp: 10, badge: "harbour-lights" },
+  { id: "d10-pint",       day: 10, emoji: "🍺", title: "A pint in a Canadian pub", desc: "Bard & Banker.", xp: 10 },
+  { id: "d10-sorry",      day: 10, emoji: "🇨🇦", title: "Say 'sorry' to a stranger", desc: "When in Canada.", xp: 10 },
+  // Day 11 — home
+  { id: "d11-flight",  day: 11, emoji: "✈️", title: "First flight home as Mr. & Mrs.", desc: "Hold hands on takeoff.", xp: 20 },
+  { id: "d11-confess", day: 11, emoji: "✍️", title: "Write the last confessional", desc: "One sentence to the couple landing in Cedar Rapids.", xp: 10 },
+  { id: "d11-episode", day: 11, emoji: "🏆", title: "Pick the episode of the trip", desc: "Decide it together.", xp: 15 }
+];
+
 // Confessional prompts — 2 per trip day. For day N: prompts (N-1)*2 and (N-1)*2+1.
 const CONFESSIONAL_PROMPTS = [
  /*d1*/ "First impressions of married travel so far?", "What did they do today that nobody else would have noticed?",

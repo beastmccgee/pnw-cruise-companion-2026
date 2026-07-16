@@ -4,15 +4,17 @@
 // (invariant #8). Promise-wrapped so the rest of the app can await cleanly.
 const Store = (() => {
   const DB_NAME = "honeymoon";
-  const DB_VERSION = 1;
+  const DB_VERSION = 2; // v2 adds the quests store
   // keyPath per store: journal/roses/confessional keyed by date; photos by id;
-  // badges by id; kv by key.
+  // badges/quests by id; kv by key. onupgradeneeded creates any store not yet
+  // present, so bumping DB_VERSION + adding here is all a new store needs.
   const STORES = {
     journal:      "date",
     photos:       "id",
     roses:        "date",
     confessional: "date",
     badges:       "id",
+    quests:       "id",
     kv:           "key"
   };
 

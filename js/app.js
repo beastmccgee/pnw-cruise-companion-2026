@@ -178,6 +178,7 @@ function renderDaysList() {
         el("p", { class: "subtitle" }, day.subtitle),
         el("div", { class: "footer-row" }, [
           el("span", { class: "stops-count" }, `${day.schedule.length} stop${day.schedule.length === 1 ? "" : "s"} planned`),
+          (() => { const p = questProgress(day.id); return p.total ? el("span", { class: "quest-chip" + (p.done === p.total ? " cleared" : "") }, `🎯 ${p.done}/${p.total}`) : null; })(),
           el("span", { style: "color:var(--primary);" }, "›")
         ])
       ])
@@ -322,6 +323,12 @@ function buildDayDetail(day) {
   body.appendChild(muted(day.subtitle));
   const mapDiv = el("div", { class: "day-map", id: "day-map-" + day.id });
   body.appendChild(mapDiv);
+
+  if (questsForDay(day.id).length) {
+    const questBox = el("div", { class: "info-card day-quests", style: "margin:0 0 18px;" });
+    renderDayQuests(questBox, day);
+    body.appendChild(questBox);
+  }
 
   const timelineWrap = el("div", { class: "timeline-wrap" });
   const isToday = day.calendarDate === localISODate();
@@ -681,13 +688,15 @@ async function renderUs() {
   const c = document.getElementById("us-content");
   c.innerHTML = "";
   const today = localISODate();
-  // Build the five cards in order; each fills itself (async IDB reads inside).
+  // Build the cards in order; each fills itself (async IDB reads inside).
+  const questCard   = el("div", { class: "info-card quest-card" });
   const loveCard    = el("div", { class: "info-card" });
   const roseCard    = el("div", { class: "info-card" });
   const confessCard = el("div", { class: "info-card" });
   const scrapCard   = el("div", { class: "info-card" });
   const badgeCard   = el("div", { class: "info-card" });
-  c.append(loveCard, roseCard, confessCard, scrapCard, badgeCard);
+  c.append(questCard, loveCard, roseCard, confessCard, scrapCard, badgeCard);
+  renderQuestCard(questCard);
   renderLoveNotesCard(loveCard, today);
   renderRoseCard(roseCard, today);
   renderConfessionalCard(confessCard, today);
@@ -1174,9 +1183,11 @@ function renderTimelineInto(wrap, day, isToday) {
 // ---------- ▶ Season Finale reel ----------
 async function openFinale() {
   if (document.querySelector(".finale-stage")) return;
+  if (!QuestState.loaded) await QuestState.load();
   const [photos, journals, roses, badges] = await Promise.all([
     Store.all("photos"), Store.all("journal"), Store.all("roses"), Store.all("badges")
   ]);
+  const finaleXp = questXp(), finaleLvl = levelInfo(finaleXp);
   const firstPhoto = {};
   photos.slice().sort((a, b) => a.ts - b.ts).forEach(p => { if (!firstPhoto[p.date]) firstPhoto[p.date] = p.blob; });
   const journalBy = {}; journals.forEach(j => { journalBy[j.date] = j.text; });
@@ -1229,6 +1240,7 @@ async function openFinale() {
   slides.push(el("div", { class: "finale-slide finale-ending" }, [
     el("div", { class: "fc-hearts" }, "❤ 💗 💞 ❤ 💗"), // static hearts (also for reduced-motion)
     el("div", { class: "fc-script script-font" }, "renewed forever"),
+    el("div", { class: "fc-level" }, `Level ${finaleLvl.index + 1} · ${finaleLvl.title} · ${finaleXp} XP`),
     el("div", { class: "ft-sig" }, "Tanner ♥ Chloe")
   ]));
 
@@ -1359,6 +1371,138 @@ function wireHeroGestures() {
   line.addEventListener("pointercancel", clear);
 }
 
+// ============================================================
+//  Phase 6 — Quests & gamification
+// ============================================================
+function fmtShort(iso) { return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+
+// In-memory mirror of the quests store so day cards / day pages can read
+// completion synchronously; kept in sync on every toggle.
+const QuestState = {
+  done: {},        // id -> completion date (YYYY-MM-DD)
+  loaded: false,
+  async load() { this.done = {}; (await Store.all("quests")).forEach(q => { this.done[q.id] = q.doneDate; }); this.loaded = true; },
+  isDone(id) { return !!this.done[id]; },
+  async set(id, on) {
+    if (on) { const d = localISODate(); this.done[id] = d; await Store.put("quests", { id, doneDate: d }); }
+    else { delete this.done[id]; await Store.del("quests", id); }
+  }
+};
+
+function questsForDay(dayId) { return QUESTS.filter(q => q.day === dayId); }
+function questProgress(dayId) { const l = questsForDay(dayId); return { done: l.filter(q => QuestState.isDone(q.id)).length, total: l.length }; }
+function questXp() { return QUESTS.reduce((s, q) => s + (QuestState.isDone(q.id) ? q.xp : 0), 0); }
+function levelInfo(xp) {
+  let i = 0;
+  COUPLE_LEVELS.forEach((l, k) => { if (xp >= l.min) i = k; });
+  const next = COUPLE_LEVELS[i + 1] || null;
+  return { index: i, title: COUPLE_LEVELS[i].title, min: COUPLE_LEVELS[i].min, nextMin: next ? next.min : null, next };
+}
+
+// Toggle a quest, then celebrate: badge unlock → level-up → episode-cleared → +XP.
+// Returns so callers can update just their own DOM (no full re-render, so open
+// episode groups don't collapse under the user).
+async function toggleQuest(q) {
+  const wasDone = QuestState.isDone(q.id);
+  const beforeLvl = levelInfo(questXp()).index;
+  await QuestState.set(q.id, !wasDone);
+  if (!wasDone) {
+    const info = levelInfo(questXp());
+    if (q.badge && !(await Store.get("badges", q.badge))) {
+      await Store.put("badges", { id: q.badge, earnedDate: localISODate() });
+      const b = BADGES.find(x => x.id === q.badge);
+      toast(`🏅 Badge unlocked: ${b ? b.name : q.badge}`);
+    } else if (info.index > beforeLvl) levelUp(info);
+    else if (q.day && questProgress(q.day).done === questsForDay(q.day).length) toast(`Episode ${q.day} cleared! 🎬`);
+    else toast(`+${q.xp} XP ❤`);
+  }
+  if (document.getElementById("view-days").classList.contains("active")) renderDaysList();
+}
+function levelUp(info) {
+  toast(`⭐ LEVEL UP — ${info.title}!`);
+  [0, 160, 320].forEach(d => setTimeout(() => heartBurst(window.innerWidth / 2, window.innerHeight * 0.5), d));
+}
+
+// One quest row — updates itself in place on tap, then fires onToggle so the
+// owning view can refresh its own summary (banner / count).
+function questRow(q, onToggle) {
+  const row = el("div", { class: "quest-row" });
+  const check = el("div", { class: "quest-check" });
+  const main = el("div", { class: "quest-main" }, [
+    el("div", { class: "quest-title" }, `${q.emoji} ${q.title}`),
+    q.desc ? el("div", { class: "quest-desc" }, q.desc) : null
+  ]);
+  row.append(check, main, el("div", { class: "quest-xp" }, `+${q.xp}`));
+  const paint = () => {
+    const done = QuestState.isDone(q.id);
+    row.classList.toggle("done", done);
+    check.textContent = done ? "✓" : "";
+    let dd = main.querySelector(".quest-donedate");
+    if (done) { if (!dd) { dd = el("div", { class: "quest-donedate" }); main.appendChild(dd); } dd.textContent = `done ${fmtShort(QuestState.done[q.id])}`; }
+    else if (dd) dd.remove();
+  };
+  paint();
+  row.addEventListener("click", async () => {
+    if (!QuestState.isDone(q.id)) heartBurstAt(row);
+    await toggleQuest(q);
+    paint();
+    if (onToggle) onToggle();
+  });
+  return row;
+}
+
+// Us-tab centerpiece: level banner + XP bar + per-episode quest groups.
+async function renderQuestCard(card) {
+  if (!QuestState.loaded) await QuestState.load();
+  card.innerHTML = "";
+  const banner = el("div", { class: "quest-banner" });
+  const paintBanner = () => {
+    const xp = questXp(), info = levelInfo(xp);
+    const doneCount = QUESTS.filter(q => QuestState.isDone(q.id)).length;
+    const pct = info.nextMin ? Math.min(100, Math.round((xp - info.min) / (info.nextMin - info.min) * 100)) : 100;
+    banner.innerHTML = "";
+    banner.append(
+      el("div", { class: "qb-top" }, [ el("span", { class: "qb-level" }, `LEVEL ${info.index + 1}`), el("span", { class: "qb-xp" }, `${xp} XP`) ]),
+      el("div", { class: "qb-title heading-font" }, info.title),
+      el("div", { class: "qb-bar" }, [ el("div", { class: "qb-fill", style: `width:${pct}%` }) ]),
+      el("div", { class: "qb-sub" }, info.nextMin ? `${info.nextMin - xp} XP to ${info.next.title}` : "Max level reached — Endgame ❤"),
+      el("div", { class: "qb-count" }, `${doneCount} / ${QUESTS.length} quests complete`)
+    );
+  };
+  paintBanner();
+  card.appendChild(banner);
+
+  const group = (labelFn, list, open) => {
+    const summary = el("summary", {}, labelFn());
+    const d = el("details", { class: "quest-group" }, [ summary ]);
+    if (open) d.setAttribute("open", "");
+    const onToggle = () => { summary.textContent = labelFn(); paintBanner(); };
+    list.forEach(q => d.appendChild(questRow(q, onToggle)));
+    return d;
+  };
+  const anytime = questsForDay(0);
+  card.appendChild(group(() => `✨ Anytime · ${anytime.filter(q => QuestState.isDone(q.id)).length}/${anytime.length}`, anytime, true));
+  const focus = (tripDayForDate(localISODate()) || {}).id || nearestDayId(localISODate());
+  TripData.days.forEach(day => {
+    const list = questsForDay(day.id); if (!list.length) return;
+    const labelFn = () => { const p = questProgress(day.id); return `EP${day.id} · ${EPISODE_TITLES[day.id]} · ${p.done}/${p.total}${p.done === p.total ? " ✓" : ""}`; };
+    card.appendChild(group(labelFn, list, day.id === focus));
+  });
+}
+
+// Compact quest strip on a day-detail page.
+function renderDayQuests(box, day) {
+  if (!QuestState.loaded) { QuestState.load().then(() => renderDayQuests(box, day)); return; }
+  box.innerHTML = "";
+  const list = questsForDay(day.id);
+  if (!list.length) return;
+  const count = el("span", { class: "dq-count" });
+  const paintCount = () => { const p = questProgress(day.id); count.textContent = `${p.done}/${p.total}`; };
+  paintCount();
+  box.appendChild(el("div", { class: "dq-head" }, [ pill(`🎯 Episode ${day.id} Quests`), count ]));
+  list.forEach(q => box.appendChild(questRow(q, paintCount)));
+}
+
 // ---------- Tab navigation ----------
 function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
@@ -1420,6 +1564,7 @@ applyShowMode();            // sets labels + hero + renders the day list
 refreshTripWidgets();       // Now/Next strip (trip days) + countdown (pre-trip)
 maybeTextAlert();           // "I've got a text!" if a stop is within 90 min
 wireHeroGestures();         // long-press → finale preview; 5 taps → recoupling
+QuestState.load().then(() => renderDaysList()); // fill in day-card quest chips
 // Keep the live widgets current without burning battery: 30s Now/Next, and the
 // countdown ticks every minute (renderCountdown is a no-op once the trip starts).
 setInterval(() => renderNowNext(), 30000);
